@@ -1,0 +1,9 @@
+{
+  "name": "prettier-config-custom",
+  "version": "0.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {},
+  "keywords": [],
+  "author": "Sai Hari"
+}

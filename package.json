@@ -2,6 +2,7 @@
   "name": "deep-state",
   "version": "0.0.0",
   "private": true,
+  "prettier": "prettier-config-custom",
   "workspaces": [
     "packages/*"
   ],
@@ -9,16 +10,17 @@
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
     "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"*.{js,json}\" && turbo run format",
+    "format:check": "prettier --check \"*.{js,json}\" && turbo run format:check"
   },
   "devDependencies": {
     "eslint-config-custom": "workspace:*",
-    "prettier": "latest",
+    "prettier": "^2.8.0",
+    "prettier-config-custom": "workspace:*",
     "turbo": "latest"
   },
   "engines": {
     "node": ">=14.0.0"
   },
-  "dependencies": {},
   "packageManager": "pnpm@7.9.4"
 }

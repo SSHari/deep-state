@@ -3,15 +3,20 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "prettier": "prettier-config-custom",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
     "eslint": "^7.32.0",
     "eslint-config-custom": "workspace:*",
+    "prettier": "^2.8.0",
+    "prettier-config-custom": "workspace:*",
     "tsconfig": "workspace:*",
     "typescript": "^4.5.2",
     "vite": "^3.2.3",

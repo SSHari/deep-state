@@ -1,0 +1,3 @@
+# `prettier`
+
+Shared prettier config.
