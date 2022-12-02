@@ -1,4 +1,4 @@
-import type { Configs, Data } from './index.type';
+import type { BaseConfigsWithBuiltDependencies, Data } from './index.type';
 
 /**
  * Core Utils
@@ -25,16 +25,19 @@ export function walkObj<T>(obj: Record<string, T>, fn: (value: T, key: string) =
   Object.entries(obj).forEach(([key, value]) => fn(value, key));
 }
 
+export const identity = <T>(arg: T) => arg;
+
 /**
  * Graph Utils
  */
-export function buildDependencyMap(configMap: Configs) {
+export function buildDependencyMap(configMap: {
+  [Key in keyof BaseConfigsWithBuiltDependencies]: Omit<BaseConfigsWithBuiltDependencies[Key], 'type'>;
+}) {
   const dependencyMap: Record<string, Set<string>> = mapObj(configMap, () => new Set());
 
   walkObj(configMap, ({ dependencies }, key) => {
     dependencies?.forEach((dependency) => {
-      const dependencyKeys = dependency.keys || [dependency.key];
-      dependencyKeys.forEach((dependencyKey) => {
+      dependency.keys.forEach((dependencyKey) => {
         dependencyMap[dependencyKey].add(key);
       });
     });

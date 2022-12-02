@@ -5,7 +5,7 @@ it('should handle building the dependency map correctly', () => {
     buildDependencyMap({
       A: {
         data: {},
-        dependencies: [{ key: 'B', cond: () => true, effects: {} }],
+        dependencies: [{ keys: ['B'], cond: () => true, effects: {} }],
       },
       B: {
         data: {},
@@ -14,14 +14,14 @@ it('should handle building the dependency map correctly', () => {
       C: {
         data: {},
         dependencies: [
-          { key: 'A', cond: () => true, effects: {} },
-          { key: 'B', cond: () => true, effects: {} },
-          { key: 'B', cond: () => true, effects: {} },
+          { keys: ['A'], cond: () => true, effects: {} },
+          { keys: ['B'], cond: () => true, effects: {} },
+          { keys: ['B'], cond: () => true, effects: {} },
         ],
       },
       D: {
         data: {},
-        dependencies: [{ key: 'B', cond: () => true, effects: {} }],
+        dependencies: [{ keys: ['B'], cond: () => true, effects: {} }],
       },
     }),
   ).toEqual({

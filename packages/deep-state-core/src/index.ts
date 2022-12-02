@@ -1,7 +1,22 @@
-import { mapObj, filterObj, buildDependencyMap, merge, deepEquals, walkObj } from './utils';
-import type { Configs, Data, DataCollection, Graph, Subscribers, Store } from './index.type';
+import { mapObj, filterObj, identity, buildDependencyMap, merge, deepEquals, walkObj } from './utils';
+import type {
+  BaseConfigs,
+  BaseConfigsWithBuiltDependencies,
+  ConfigureStoreOptions,
+  Data,
+  Graph,
+  RecursivePartial,
+  Subscribers,
+  Store,
+  StoreSnapshot,
+  TypeCollection,
+} from './index.type';
 
-function buildGraphNode(config: Configs[string], nodeKey: string): Graph[string] {
+function buildDependencies(config: BaseConfigs[string]): BaseConfigsWithBuiltDependencies[string] {
+  return { ...config, dependencies: config.dependencies?.(identity) ?? [] };
+}
+
+function buildGraphNode(config: BaseConfigsWithBuiltDependencies[string], nodeKey: string): Graph[string] {
   let currentDependencies = config.dependencies ?? [];
   let currentData = config.data ?? {};
   let prevMergedData: Data;
@@ -15,26 +30,18 @@ function buildGraphNode(config: Configs[string], nodeKey: string): Graph[string]
       mergedData = currentData;
 
       currentDependencies.forEach((dependency, index) => {
-        if (dependency.key) {
-          const { data } = graph[dependency.key];
-          if (typeof dependency.cond === 'function' ? dependency.cond(data) : !!dependency.cond) {
-            const dependencyEffects = typeof dependency.effects === 'function' ? dependency.effects(data) : dependency.effects;
-            mergedData = merge(mergedData, dependencyEffects);
-          }
-        } else if (dependency.keys) {
-          const filteredGraph = filterObj(graph, (_, key) => dependency.keys.includes(key));
-          const dataCollection = mapObj(filteredGraph, (value) => value.data);
-          const dataCollectionProxy = new Proxy(dataCollection, {
-            get(collection, prop) {
-              if (prop in collection) return collection[prop as string];
-              throw new Error(`To access '${prop.toString()}' in dependency ${index + 1} of '${nodeKey}' add it to the 'keys' array`);
-            },
-          });
+        const filteredGraph = filterObj(graph, (_, key) => dependency.keys.includes(key));
+        const dataCollection = mapObj(filteredGraph, (value) => value.data);
+        const dataCollectionProxy = new Proxy(dataCollection, {
+          get(collection, prop) {
+            if (prop in collection) return collection[prop as string];
+            throw new Error(`To access '${prop.toString()}' in dependency ${index + 1} of '${nodeKey}' add it to the 'keys' array`);
+          },
+        });
 
-          if (typeof dependency.cond === 'function' ? dependency.cond(dataCollectionProxy) : !!dependency.cond) {
-            const dependencyEffects = typeof dependency.effects === 'function' ? dependency.effects(dataCollectionProxy) : dependency.effects;
-            mergedData = merge(mergedData, dependencyEffects);
-          }
+        if (typeof dependency.cond === 'function' ? dependency.cond(dataCollectionProxy) : !!dependency.cond) {
+          const dependencyEffects = typeof dependency.effects === 'function' ? dependency.effects(dataCollectionProxy) : dependency.effects;
+          mergedData = merge(mergedData, dependencyEffects);
         }
       });
 
@@ -45,8 +52,8 @@ function buildGraphNode(config: Configs[string], nodeKey: string): Graph[string]
 
       return false;
     },
-    resetData: (data) => {
-      currentData = data ?? {};
+    resetData: (data, defaults) => {
+      currentData = merge(data ?? {}, defaults?.[config.type]);
       prevMergedData = {};
       mergedData = {};
     },
@@ -59,10 +66,18 @@ function buildGraphNode(config: Configs[string], nodeKey: string): Graph[string]
   };
 }
 
-export function createStore<Collection extends DataCollection = DataCollection>(config: Configs<Collection>): Store<Collection> {
-  const graph: Graph = mapObj(config as Configs, buildGraphNode);
+function baseCreateStore<Configs extends BaseConfigs, Collection extends TypeCollection>(
+  configs: Configs,
+  options: ConfigureStoreOptions<Collection>,
+): Store<Configs> {
+  const configsWithDefaults = mapObj(configs as BaseConfigs, (value) => {
+    return { ...value, data: merge(value.data, options.defaults?.[value.type]) };
+  });
+
+  const configWithBuiltDependencies = mapObj(configsWithDefaults, buildDependencies);
+  const graph: Graph = mapObj(configWithBuiltDependencies as BaseConfigsWithBuiltDependencies, buildGraphNode);
   const subscribers: Subscribers = new Set();
-  let dependencyMap = buildDependencyMap(config as Configs);
+  let dependencyMap = buildDependencyMap(configWithBuiltDependencies as BaseConfigsWithBuiltDependencies);
 
   /**
    * Dependencies
@@ -86,9 +101,9 @@ export function createStore<Collection extends DataCollection = DataCollection>(
     }
   }
 
-  let snapshot: Collection;
+  let snapshot: StoreSnapshot<Configs>;
   function updateSnapshot() {
-    snapshot = mapObj(graph, (value) => value.data) as Collection;
+    snapshot = mapObj(graph, (value) => value.data) as StoreSnapshot<Configs>;
   }
 
   /**
@@ -102,11 +117,12 @@ export function createStore<Collection extends DataCollection = DataCollection>(
       return snapshot;
     },
     reset(config, { data = true, dependencies = false } = {}) {
-      walkObj(config as Configs, (value, key) => {
-        data && graph[key].resetData(value.data);
+      const configWithBuiltDependencies = mapObj(config as any, buildDependencies);
+      walkObj(configWithBuiltDependencies as BaseConfigsWithBuiltDependencies, (value, key) => {
+        data && graph[key].resetData(value.data, options.defaults);
         dependencies && graph[key].resetDependencies(value.dependencies);
       });
-      dependencyMap = buildDependencyMap(config as Configs);
+      dependencyMap = buildDependencyMap(configWithBuiltDependencies as BaseConfigsWithBuiltDependencies);
       calculateDependencies();
       updateSnapshot();
       subscribers.forEach((subscriber) => subscriber());
@@ -126,5 +142,52 @@ export function createStore<Collection extends DataCollection = DataCollection>(
   };
 }
 
+export function configureStore<Collection extends TypeCollection>(options: ConfigureStoreOptions<Collection>) {
+  function createStore<GraphTypes extends { [GraphKey in keyof GraphTypes]: keyof Collection }>(config: {
+    keys: {
+      [GraphKey in keyof GraphTypes]: {
+        type: GraphTypes[GraphKey];
+        data?: Collection[GraphTypes[GraphKey]];
+        dependencies?: <
+          Build extends {
+            <DependencyKeys extends Array<keyof GraphTypes>>(dependency: {
+              keys: DependencyKeys;
+              cond:
+                | true
+                | ((data: {
+                    [DependencyKey in DependencyKeys[number]]: Collection[GraphTypes[DependencyKey]];
+                  }) => boolean);
+              effects:
+                | RecursivePartial<Collection[GraphTypes[GraphKey]]>
+                | ((data: {
+                    [DependencyKey in DependencyKeys[number]]: Collection[GraphTypes[DependencyKey]];
+                  }) => RecursivePartial<Collection[GraphTypes[GraphKey]]>);
+            }): typeof dependency;
+          },
+        >(
+          build: Build,
+        ) => Array<{
+          keys: Array<keyof GraphTypes>;
+          cond: true | ((data: any) => boolean);
+          effects: Record<string, any> | ((data: any) => Record<string, any>);
+        }>;
+      };
+    };
+  }) {
+    return baseCreateStore(config.keys, options);
+  }
+
+  return createStore;
+}
+
 /* Re-export types */
-export type { Configs, Data, DataCollection, Graph, Store, Updater } from './index.type';
+export type {
+  ConfigureStoreOptions,
+  Data,
+  Graph,
+  RecursivePartial,
+  Store,
+  StoreSnapshot,
+  TypeCollection,
+  Updater
+} from './index.type';
