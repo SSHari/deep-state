@@ -11,7 +11,8 @@
     "dev": "turbo run dev --parallel",
     "lint": "turbo run lint",
     "format": "prettier --write \"*.{js,json}\" && turbo run format",
-    "format:check": "prettier --check \"*.{js,json}\" && turbo run format:check"
+    "format:check": "prettier --check \"*.{js,json}\" && turbo run format:check",
+    "test": "turbo test -- --run"
   },
   "devDependencies": {
     "eslint-config-custom": "workspace:*",
