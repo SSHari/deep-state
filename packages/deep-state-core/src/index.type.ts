@@ -53,6 +53,6 @@ export type StoreSnapshot<Configs extends BaseConfigs> = { [Key in keyof Configs
 export type Store<Configs extends BaseConfigs> = {
   getSnapshot(): StoreSnapshot<Configs>;
   reset(configs: { [Key in keyof Configs]: Omit<Configs[Key], 'type'> }, options?: { data?: boolean; dependencies?: boolean }): void;
-  update(key: string, updater: Updater<Data>): void;
+  update<Key extends keyof Configs>(key: Key, updater: NonNullable<Updater<Configs[Key]['data']>>): void;
   subscribe(fn: () => void): () => void;
 };

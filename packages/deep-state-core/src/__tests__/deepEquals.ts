@@ -39,3 +39,7 @@ it.each([
 ])('should handle doing a deep equals correctly for the objects: %s | %s', (a, b, result) => {
   expect(deepEquals(a, b)).toBe(result);
 });
+
+it.each([[NaN, NaN, true]])('should handle doing a deep equals correctly for the exceptions: %s | %s', (a, b, result) => {
+  expect(deepEquals(a, b)).toBe(result);
+});

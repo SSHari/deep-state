@@ -82,7 +82,7 @@ function baseCreateStore<Configs extends BaseConfigs, Collection extends TypeCol
   /**
    * Dependencies
    */
-  function calculateDependencies(changedKeys = Object.keys(graph)) {
+  function calculateDependencies(changedKeys: Array<keyof typeof graph> = Object.keys(graph)) {
     const dependentKeysToCalculate = new Set(changedKeys);
 
     while (dependentKeysToCalculate.size > 0) {
@@ -128,8 +128,8 @@ function baseCreateStore<Configs extends BaseConfigs, Collection extends TypeCol
       subscribers.forEach((subscriber) => subscriber());
     },
     update(key, updater) {
-      graph[key].setData(updater);
-      calculateDependencies([key]);
+      graph[key as keyof Graph].setData(updater);
+      calculateDependencies([key as keyof Graph]);
       updateSnapshot();
       subscribers.forEach((subscriber) => subscriber());
     },
@@ -181,13 +181,4 @@ export function configureStore<Collection extends TypeCollection>(options: Confi
 }
 
 /* Re-export types */
-export type {
-  ConfigureStoreOptions,
-  Data,
-  Graph,
-  RecursivePartial,
-  Store,
-  StoreSnapshot,
-  TypeCollection,
-  Updater
-} from './index.type';
+export type { BaseConfigs, ConfigureStoreOptions, Data, Graph, RecursivePartial, Store, StoreSnapshot, TypeCollection, Updater } from './index.type';

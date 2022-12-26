@@ -95,8 +95,6 @@ export function merge(...sources: any[]) {
  * Deep Equals Utils
  */
 export function deepEquals(a: any, b: any) {
-  if (!a || !b) return a === b;
-
   if (Array.isArray(a) && Array.isArray(b)) {
     if (a.length !== b.length) return false;
 
@@ -121,6 +119,8 @@ export function deepEquals(a: any, b: any) {
 
     return true;
   }
+
+  if (Number.isNaN(a)) return Number.isNaN(b);
 
   return a === b;
 }

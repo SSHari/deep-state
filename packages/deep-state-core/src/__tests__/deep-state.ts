@@ -427,7 +427,7 @@ it('should recalculate dependencies for all keys on a reset and notify subscribe
   });
   expect(subscriber).toHaveBeenCalledTimes(1);
   expect(depState.getSnapshot()).toEqual({
-    'key-one': { key: 1,name: 'Default Name', updated: true },
+    'key-one': { key: 1, name: 'Default Name', updated: true },
     'key-two': { key: 2 },
     'key-three': {},
   });
