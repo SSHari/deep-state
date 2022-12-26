@@ -3,7 +3,10 @@ import type { BaseConfigsWithBuiltDependencies, Data } from './index.type';
 /**
  * Core Utils
  */
-export function mapObj<T, U>(obj: Record<string, T>, fn: (value: T, key: string) => U) {
+export function mapObj<T, U>(
+  obj: Record<string, T>,
+  fn: (value: T, key: string) => U,
+) {
   const map: Record<string, U> = {};
   Object.entries(obj).forEach(([key, value]) => {
     map[key] = fn(value, key);
@@ -11,7 +14,10 @@ export function mapObj<T, U>(obj: Record<string, T>, fn: (value: T, key: string)
   return map;
 }
 
-export function filterObj<T>(obj: Record<string, T>, fn: (value: T, key: string) => boolean) {
+export function filterObj<T>(
+  obj: Record<string, T>,
+  fn: (value: T, key: string) => boolean,
+) {
   const filter: Record<string, T> = {};
   Object.entries(obj).forEach(([key, value]) => {
     if (fn(value, key)) {
@@ -21,7 +27,10 @@ export function filterObj<T>(obj: Record<string, T>, fn: (value: T, key: string)
   return filter;
 }
 
-export function walkObj<T>(obj: Record<string, T>, fn: (value: T, key: string) => void) {
+export function walkObj<T>(
+  obj: Record<string, T>,
+  fn: (value: T, key: string) => void,
+) {
   Object.entries(obj).forEach(([key, value]) => fn(value, key));
 }
 
@@ -31,9 +40,15 @@ export const identity = <T>(arg: T) => arg;
  * Graph Utils
  */
 export function buildDependencyMap(configMap: {
-  [Key in keyof BaseConfigsWithBuiltDependencies]: Omit<BaseConfigsWithBuiltDependencies[Key], 'type'>;
+  [Key in keyof BaseConfigsWithBuiltDependencies]: Omit<
+    BaseConfigsWithBuiltDependencies[Key],
+    'type'
+  >;
 }) {
-  const dependencyMap: Record<string, Set<string>> = mapObj(configMap, () => new Set());
+  const dependencyMap: Record<string, Set<string>> = mapObj(
+    configMap,
+    () => new Set(),
+  );
 
   walkObj(configMap, ({ dependencies }, key) => {
     dependencies?.forEach((dependency) => {

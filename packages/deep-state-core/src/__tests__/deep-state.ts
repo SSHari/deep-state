@@ -6,22 +6,35 @@ const createStore = configureStore<TestCollection>({
 
 it('overwrites the old data on a static update', () => {
   const depState = buildStore();
-  expect(depState.getSnapshot()['key-one']).toEqual({ name: 'Default Name', key: 1 });
+  expect(depState.getSnapshot()['key-one']).toEqual({
+    name: 'Default Name',
+    key: 1,
+  });
   depState.update('key-one', { updated: true });
   expect(depState.getSnapshot()['key-one']).toEqual({ updated: true });
 });
 
 it('a dynamic (function) update gets the previous data', () => {
   const depState = buildStore();
-  expect(depState.getSnapshot()['key-one']).toEqual({ name: 'Default Name', key: 1 });
+  expect(depState.getSnapshot()['key-one']).toEqual({
+    name: 'Default Name',
+    key: 1,
+  });
   depState.update('key-one', (prev) => ({ ...prev, updated: true }));
-  expect(depState.getSnapshot()['key-one']).toEqual({ name: 'Default Name', key: 1, updated: true });
+  expect(depState.getSnapshot()['key-one']).toEqual({
+    name: 'Default Name',
+    key: 1,
+    updated: true,
+  });
 });
 
 // Dependency Chain: key-one --(depends on)--> key-one (self-dependency)
 it('returns the expected effects for key-one when key-one changes', () => {
   const depState = buildStore();
-  expect(depState.getSnapshot()['key-one']).toEqual({ name: 'Default Name', key: 1 });
+  expect(depState.getSnapshot()['key-one']).toEqual({
+    name: 'Default Name',
+    key: 1,
+  });
 
   depState.update('key-one', { isValid: false });
   expect(depState.getSnapshot()['key-one']).toEqual({
@@ -36,7 +49,10 @@ it('returns the expected effects for key-one when key-one changes', () => {
 // Dependency Chain: key-one --(depends on)--> key-two
 it('returns the expected effects for key-one when key-two changes', () => {
   const depState = buildStore();
-  expect(depState.getSnapshot()['key-one']).toEqual({ name: 'Default Name', key: 1 });
+  expect(depState.getSnapshot()['key-one']).toEqual({
+    name: 'Default Name',
+    key: 1,
+  });
 
   depState.update('key-two', { age: 21 });
   expect(depState.getSnapshot()['key-one']).toEqual({
@@ -45,13 +61,19 @@ it('returns the expected effects for key-one when key-two changes', () => {
   });
 
   depState.update('key-two', {});
-  expect(depState.getSnapshot()['key-one']).toEqual({ name: 'Default Name', key: 1 });
+  expect(depState.getSnapshot()['key-one']).toEqual({
+    name: 'Default Name',
+    key: 1,
+  });
 });
 
 // Dependency Chain: key-one --(depends on)--> key-three (effect one)
 it('returns the expected effects for key-one when key-three changes (effect one)', () => {
   const depState = buildStore();
-  expect(depState.getSnapshot()['key-one']).toEqual({ name: 'Default Name', key: 1 });
+  expect(depState.getSnapshot()['key-one']).toEqual({
+    name: 'Default Name',
+    key: 1,
+  });
 
   depState.update('key-three', { person: { age: 30 } });
   expect(depState.getSnapshot()['key-one']).toEqual({
@@ -60,13 +82,19 @@ it('returns the expected effects for key-one when key-three changes (effect one)
   });
 
   depState.update('key-three', {});
-  expect(depState.getSnapshot()['key-one']).toEqual({ name: 'Default Name', key: 1 });
+  expect(depState.getSnapshot()['key-one']).toEqual({
+    name: 'Default Name',
+    key: 1,
+  });
 });
 
 // Dependency Chain: key-one --(depends on)--> key-three (effect two overwrites effect one)
 it('returns the expected effects for key-one when key-three changes (effect two)', () => {
   const depState = buildStore();
-  expect(depState.getSnapshot()['key-one']).toEqual({ name: 'Default Name', key: 1 });
+  expect(depState.getSnapshot()['key-one']).toEqual({
+    name: 'Default Name',
+    key: 1,
+  });
 
   depState.update('key-three', { person: { age: 30, name: 'key one effect' } });
   expect(depState.getSnapshot()['key-one']).toEqual({
@@ -81,13 +109,19 @@ it('returns the expected effects for key-one when key-three changes (effect two)
   });
 
   depState.update('key-three', {});
-  expect(depState.getSnapshot()['key-one']).toEqual({ name: 'Default Name', key: 1 });
+  expect(depState.getSnapshot()['key-one']).toEqual({
+    name: 'Default Name',
+    key: 1,
+  });
 });
 
 // Dependency Chain: key-one --(depends on)--> key-two --(depends on)--> key-three
 it('returns the expected effects for key-one and key-two when key-three changes', () => {
   const depState = buildStore();
-  expect(depState.getSnapshot()['key-one']).toEqual({ name: 'Default Name', key: 1 });
+  expect(depState.getSnapshot()['key-one']).toEqual({
+    name: 'Default Name',
+    key: 1,
+  });
   expect(depState.getSnapshot()['key-two']).toEqual({ key: 2, age: 20 });
 
   depState.update('key-three', { person: { age: 20 } });
@@ -98,7 +132,10 @@ it('returns the expected effects for key-one and key-two when key-three changes'
   expect(depState.getSnapshot()['key-two']).toEqual({ key: 2, age: 21 });
 
   depState.update('key-three', {});
-  expect(depState.getSnapshot()['key-one']).toEqual({ name: 'Default Name', key: 1 });
+  expect(depState.getSnapshot()['key-one']).toEqual({
+    name: 'Default Name',
+    key: 1,
+  });
   expect(depState.getSnapshot()['key-two']).toEqual({ key: 2, age: 20 });
 });
 
@@ -169,11 +206,19 @@ it("doesn't allow access to key data in a composite dependency if the key isn't 
           type: 'key-one',
           data: { key: 0 },
           // @ts-ignore
-          dependencies: (build) => [build({ keys: [], cond: (data) => !!data['key-one'].key, effects: {} })],
+          dependencies: (build) => [
+            build({
+              keys: [],
+              cond: (data) => !!data['key-one'].key,
+              effects: {},
+            }),
+          ],
         },
       },
     }),
-  ).toThrowError("To access 'key-one' in dependency 1 of 'key-one' add it to the 'keys' array");
+  ).toThrowError(
+    "To access 'key-one' in dependency 1 of 'key-one' add it to the 'keys' array",
+  );
 
   const depState = createStore({
     keys: {
@@ -224,7 +269,9 @@ it('allows a cond to be set to true for effects which should always be applied',
       'key-one': {
         type: 'key-one',
         data: { value: 0 },
-        dependencies: (build) => [build({ keys: ['key-one'], cond: true, effects: { value: 1 } })],
+        dependencies: (build) => [
+          build({ keys: ['key-one'], cond: true, effects: { value: 1 } }),
+        ],
       },
       'key-two': {
         type: 'key-two',
@@ -366,12 +413,20 @@ it('should calculate dependencies for all keys on initialization', () => {
       'key-one': {
         type: 'key-one',
         data: { key: 0 },
-        dependencies: (build) => [build({ keys: ['key-one'], cond: true, effects: { key: 1 } })],
+        dependencies: (build) => [
+          build({ keys: ['key-one'], cond: true, effects: { key: 1 } }),
+        ],
       },
       'key-two': {
         type: 'key-two',
         data: { key: 0 },
-        dependencies: (build) => [build({ keys: ['key-one'], cond: (data) => data['key-one'].key === 1, effects: { key: 2 } })],
+        dependencies: (build) => [
+          build({
+            keys: ['key-one'],
+            cond: (data) => data['key-one'].key === 1,
+            effects: { key: 2 },
+          }),
+        ],
       },
     },
   });
@@ -478,7 +533,8 @@ function buildStore() {
           }),
           build({
             keys: ['key-three'],
-            cond: (data) => (data['key-three'].person?.name || '') === 'key one effect',
+            cond: (data) =>
+              (data['key-three'].person?.name || '') === 'key one effect',
             effects: () => ({ name: 'key three effect two applied' }),
           }),
         ],
@@ -516,8 +572,13 @@ function buildStore() {
         dependencies: (build) => [
           build({
             keys: ['key-one', 'key-two', 'key-three'],
-            cond: (data) => !!data['key-one'].composite && !!data['key-two'].composite && !!data['key-three'].composite,
-            effects: { name: 'multi key (1, 2, 3) composite dependency applied' },
+            cond: (data) =>
+              !!data['key-one'].composite &&
+              !!data['key-two'].composite &&
+              !!data['key-three'].composite,
+            effects: {
+              name: 'multi key (1, 2, 3) composite dependency applied',
+            },
           }),
           build({
             keys: ['key-four'],

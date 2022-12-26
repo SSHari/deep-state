@@ -4,8 +4,16 @@ it.each([
   [{}, [{ name: 'A', age: 50 }], { name: 'A', age: 50 }],
   [{ name: 'A' }, [{ name: 'B', age: 50 }], { name: 'B', age: 50 }],
   [{ name: 'A' }, [{ age: 50 }, { age: 1000 }], { name: 'A', age: 1000 }],
-  [{ name: 'A' }, [{ age: 50 }, { age: 1000 }, { name: 'C' }], { name: 'C', age: 1000 }],
-  [{ people: { A: 50, B: 100 } }, [{ people: { A: 50, B: 600 } }], { people: { A: 50, B: 600 } }],
+  [
+    { name: 'A' },
+    [{ age: 50 }, { age: 1000 }, { name: 'C' }],
+    { name: 'C', age: 1000 },
+  ],
+  [
+    { people: { A: 50, B: 100 } },
+    [{ people: { A: 50, B: 600 } }],
+    { people: { A: 50, B: 600 } },
+  ],
   [{ names: ['A', 'B'] }, [{ names: ['A', 'C'] }], { names: ['A', 'C'] }],
   [{ names: ['A', 'B'] }, [{ names: ['A', 'C'] }], { names: ['A', 'C'] }],
   [
@@ -18,10 +26,26 @@ it.each([
       ],
     },
   ],
-  [{ people: [{ names: [{ name: 'A' }, 'B'] }] }, [{ people: [{ names: [{ name: 'B' }, 'C'] }] }], { people: [{ names: [{ name: 'B' }, 'C'] }] }],
-  [{ people: [{ names: [{ name: 'A' }, 'B'] }] }, [{ people: [{ names: [{ name: 'B' }, 'C'] }] }], { people: [{ names: [{ name: 'B' }, 'C'] }] }],
-  [{ people: { names: [{ name: 'A', age: 10 }] } }, [{ people: { names: [{ name: 'B' }] } }], { people: { names: [{ name: 'B', age: 10 }] } }],
-  [{ name: 'A' }, [{ name: 'B' }, { name: 'C' }, { name: 'D' }, { name: 'E' }], { name: 'E' }],
+  [
+    { people: [{ names: [{ name: 'A' }, 'B'] }] },
+    [{ people: [{ names: [{ name: 'B' }, 'C'] }] }],
+    { people: [{ names: [{ name: 'B' }, 'C'] }] },
+  ],
+  [
+    { people: [{ names: [{ name: 'A' }, 'B'] }] },
+    [{ people: [{ names: [{ name: 'B' }, 'C'] }] }],
+    { people: [{ names: [{ name: 'B' }, 'C'] }] },
+  ],
+  [
+    { people: { names: [{ name: 'A', age: 10 }] } },
+    [{ people: { names: [{ name: 'B' }] } }],
+    { people: { names: [{ name: 'B', age: 10 }] } },
+  ],
+  [
+    { name: 'A' },
+    [{ name: 'B' }, { name: 'C' }, { name: 'D' }, { name: 'E' }],
+    { name: 'E' },
+  ],
 ])('should handle the merge util correctly', (destination, sources, merged) => {
   expect(destination).not.toEqual(merged);
   expect(merge(destination, ...sources)).toEqual(merged);

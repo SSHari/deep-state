@@ -1,18 +1,45 @@
-import { createContext, forwardRef, useContext, useDebugValue, useEffect, useImperativeHandle, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  createContext,
+  forwardRef,
+  useContext,
+  useDebugValue,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { configureStore } from 'deep-state-core';
-import { BaseConfigs, ConfigureStoreOptions, RecursivePartial, Store, StoreSnapshot, TypeCollection,  } from 'deep-state-core';
+import {
+  BaseConfigs,
+  ConfigureStoreOptions,
+  RecursivePartial,
+  Store,
+  StoreSnapshot,
+  TypeCollection,
+} from 'deep-state-core';
 
-type DeepStateProviderProps<Configs extends BaseConfigs> = React.PropsWithChildren<{
-  keys: Configs;
-  onChange(data: StoreSnapshot<Configs>, changedKeys: (keyof StoreSnapshot<Configs>)[]): void;
-}>;
+type DeepStateProviderProps<Configs extends BaseConfigs> =
+  React.PropsWithChildren<{
+    keys: Configs;
+    onChange(
+      data: StoreSnapshot<Configs>,
+      changedKeys: (keyof StoreSnapshot<Configs>)[],
+    ): void;
+  }>;
 
-const DeepStateContext = createContext<Store<BaseConfigs> | undefined>(undefined);
+const DeepStateContext = createContext<Store<BaseConfigs> | undefined>(
+  undefined,
+);
 
-export function BuildDeepState<Collection extends TypeCollection>(options: ConfigureStoreOptions<Collection>) {
+export function BuildDeepState<Collection extends TypeCollection>(
+  options: ConfigureStoreOptions<Collection>,
+) {
   const createStore = configureStore(options);
 
-  function DeepStateProvider<GraphTypes extends { [GraphKey in keyof GraphTypes]: keyof Collection }>(
+  function DeepStateProvider<
+    GraphTypes extends { [GraphKey in keyof GraphTypes]: keyof Collection },
+  >(
     props: {
       // Have to add `ref` to the type because of the `forwardRef` override
       // `forwardRef` doesn't respect the type of the props in this complex type
@@ -21,7 +48,12 @@ export function BuildDeepState<Collection extends TypeCollection>(options: Confi
         reset: Store<BaseConfigs>['reset'];
       }>;
       children: React.ReactNode;
-      onChange: (data: { [GraphKey in keyof GraphTypes]: Collection[GraphTypes[GraphKey]] }, changedKeys: (keyof GraphTypes)[]) => void;
+      onChange: (
+        data: {
+          [GraphKey in keyof GraphTypes]: Collection[GraphTypes[GraphKey]];
+        },
+        changedKeys: (keyof GraphTypes)[],
+      ) => void;
       keys: {
         [GraphKey in keyof GraphTypes]: {
           type: GraphTypes[GraphKey];
@@ -60,7 +92,10 @@ export function BuildDeepState<Collection extends TypeCollection>(options: Confi
     const [store] = useState(() => createStore({ keys: props.keys as any }));
 
     const onChangeRef = useRef(buildOnChangeWrapper(store.getSnapshot()));
-    useEffect(() => onChangeRef.current.updateOnChange(props.onChange as any), [props.onChange]);
+    useEffect(
+      () => onChangeRef.current.updateOnChange(props.onChange as any),
+      [props.onChange],
+    );
 
     useEffect(() => {
       return store.subscribe(() => {
@@ -68,14 +103,28 @@ export function BuildDeepState<Collection extends TypeCollection>(options: Confi
       });
     }, [store]);
 
-    useImperativeHandle(ref, () => ({ reset: store.reset, update: store.update }), [store.reset, store.update]);
+    useImperativeHandle(
+      ref,
+      () => ({ reset: store.reset, update: store.update }),
+      [store.reset, store.update],
+    );
 
-    return <DeepStateContext.Provider value={store as Store<BaseConfigs>}>{props.children}</DeepStateContext.Provider>;
+    return (
+      <DeepStateContext.Provider value={store as Store<BaseConfigs>}>
+        {props.children}
+      </DeepStateContext.Provider>
+    );
   }
 
-
-  function buildProps<GraphTypes extends { [GraphKey in keyof GraphTypes]: keyof Collection }>(props: {
-    onChange: (data: { [GraphKey in keyof GraphTypes]: Collection[GraphTypes[GraphKey]] }, changedKeys: (keyof GraphTypes)[]) => void;
+  function buildProps<
+    GraphTypes extends { [GraphKey in keyof GraphTypes]: keyof Collection },
+  >(props: {
+    onChange: (
+      data: {
+        [GraphKey in keyof GraphTypes]: Collection[GraphTypes[GraphKey]];
+      },
+      changedKeys: (keyof GraphTypes)[],
+    ) => void;
     keys: {
       [GraphKey in keyof GraphTypes]: {
         type: GraphTypes[GraphKey];
@@ -109,14 +158,22 @@ export function BuildDeepState<Collection extends TypeCollection>(options: Confi
     return props;
   }
 
-  function useDeepStateProviderRef<Configs extends BaseConfigs = BaseConfigs>(): React.MutableRefObject<{
+  function useDeepStateProviderRef<
+    Configs extends BaseConfigs = BaseConfigs,
+  >(): React.MutableRefObject<{
     update: Store<Configs>['update'];
     reset: Store<Configs>['reset'];
   } | null> {
     return useRef(null);
   }
 
-  return { DeepStateProvider: forwardRef(DeepStateProvider as any) as typeof DeepStateProvider,  buildProps, useDeepStateProviderRef };
+  return {
+    DeepStateProvider: forwardRef(
+      DeepStateProvider as any,
+    ) as typeof DeepStateProvider,
+    buildProps,
+    useDeepStateProviderRef,
+  };
 }
 
 function buildOnChangeWrapper(initialData: StoreSnapshot<BaseConfigs>) {
@@ -133,7 +190,9 @@ function buildOnChangeWrapper(initialData: StoreSnapshot<BaseConfigs>) {
       lastData = data;
       onChange(data, changedKeys);
     },
-    updateOnChange(newOnChange: DeepStateProviderProps<BaseConfigs>['onChange']) {
+    updateOnChange(
+      newOnChange: DeepStateProviderProps<BaseConfigs>['onChange'],
+    ) {
       onChange = newOnChange;
     },
   };
@@ -146,7 +205,9 @@ type UseDeepStateStoreOptions<Configs extends BaseConfigs> = {
 function useDeepStateStore<Configs extends BaseConfigs>() {
   const context = useContext(DeepStateContext) as Store<Configs>;
   if (context === undefined) {
-    throw new Error('Make sure useDeepStateStore is being used within a DeepStateProvider');
+    throw new Error(
+      'Make sure useDeepStateStore is being used within a DeepStateProvider',
+    );
   }
   return context;
 }
@@ -163,11 +224,17 @@ export function useDeepStateReset<Configs extends BaseConfigs>() {
   return context.reset;
 }
 
-export function useDeepState<Configs extends BaseConfigs>({ selector = (state) => state }: UseDeepStateStoreOptions<Configs>) {
+export function useDeepState<Configs extends BaseConfigs>({
+  selector = (state) => state,
+}: UseDeepStateStoreOptions<Configs>) {
   const context = useDeepStateStore<Configs>();
-  const selectedValue = useSyncExternalStore(context.subscribe, () => selector(context.getSnapshot()));
+  const selectedValue = useSyncExternalStore(context.subscribe, () =>
+    selector(context.getSnapshot()),
+  );
   useDebugValue(selectedValue);
   return selectedValue;
 }
 
-export type InferDeepStateFromProps<Props extends DeepStateProviderProps<BaseConfigs>> = Props['keys'];
+export type InferDeepStateFromProps<
+  Props extends DeepStateProviderProps<BaseConfigs>,
+> = Props['keys'];

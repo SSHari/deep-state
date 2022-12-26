@@ -1,5 +1,9 @@
 export type RecursivePartial<T> = {
-  [P in keyof T]?: T[P] extends (infer U)[] ? RecursivePartial<U>[] : T[P] extends object ? RecursivePartial<T[P]> : T[P];
+  [P in keyof T]?: T[P] extends (infer U)[]
+    ? RecursivePartial<U>[]
+    : T[P] extends object
+    ? RecursivePartial<T[P]>
+    : T[P];
 };
 
 export type Data = Record<string, any>;
@@ -38,8 +42,13 @@ export type Graph = {
   [x: string]: {
     readonly data: Record<string, any>;
     calculateNextEffects(graph: Graph): boolean;
-    resetData: (data?: Data, defaults?: ConfigureStoreOptions<TypeCollection>['defaults']) => void;
-    resetDependencies: (dependencies?: BaseConfigsWithBuiltDependencies[keyof BaseConfigsWithBuiltDependencies]['dependencies']) => void;
+    resetData: (
+      data?: Data,
+      defaults?: ConfigureStoreOptions<TypeCollection>['defaults'],
+    ) => void;
+    resetDependencies: (
+      dependencies?: BaseConfigsWithBuiltDependencies[keyof BaseConfigsWithBuiltDependencies]['dependencies'],
+    ) => void;
     setData: (updater: Updater<Data>) => void;
   };
 };
@@ -48,11 +57,19 @@ export type Subscribers = Set<() => void>;
 
 export type Updater<T extends any> = T | ((prev: T) => T);
 
-export type StoreSnapshot<Configs extends BaseConfigs> = { [Key in keyof Configs]: Configs[Key]['data'] };
+export type StoreSnapshot<Configs extends BaseConfigs> = {
+  [Key in keyof Configs]: Configs[Key]['data'];
+};
 
 export type Store<Configs extends BaseConfigs> = {
   getSnapshot(): StoreSnapshot<Configs>;
-  reset(configs: { [Key in keyof Configs]: Omit<Configs[Key], 'type'> }, options?: { data?: boolean; dependencies?: boolean }): void;
-  update<Key extends keyof Configs>(key: Key, updater: NonNullable<Updater<Configs[Key]['data']>>): void;
+  reset(
+    configs: { [Key in keyof Configs]: Omit<Configs[Key], 'type'> },
+    options?: { data?: boolean; dependencies?: boolean },
+  ): void;
+  update<Key extends keyof Configs>(
+    key: Key,
+    updater: NonNullable<Updater<Configs[Key]['data']>>,
+  ): void;
   subscribe(fn: () => void): () => void;
 };

@@ -1,4 +1,12 @@
-import { mapObj, filterObj, identity, buildDependencyMap, merge, deepEquals, walkObj } from './utils';
+import {
+  mapObj,
+  filterObj,
+  identity,
+  buildDependencyMap,
+  merge,
+  deepEquals,
+  walkObj,
+} from './utils';
 import type {
   BaseConfigs,
   BaseConfigsWithBuiltDependencies,
@@ -12,11 +20,16 @@ import type {
   TypeCollection,
 } from './index.type';
 
-function buildDependencies(config: BaseConfigs[string]): BaseConfigsWithBuiltDependencies[string] {
+function buildDependencies(
+  config: BaseConfigs[string],
+): BaseConfigsWithBuiltDependencies[string] {
   return { ...config, dependencies: config.dependencies?.(identity) ?? [] };
 }
 
-function buildGraphNode(config: BaseConfigsWithBuiltDependencies[string], nodeKey: string): Graph[string] {
+function buildGraphNode(
+  config: BaseConfigsWithBuiltDependencies[string],
+  nodeKey: string,
+): Graph[string] {
   let currentDependencies = config.dependencies ?? [];
   let currentData = config.data ?? {};
   let prevMergedData: Data;
@@ -30,17 +43,30 @@ function buildGraphNode(config: BaseConfigsWithBuiltDependencies[string], nodeKe
       mergedData = currentData;
 
       currentDependencies.forEach((dependency, index) => {
-        const filteredGraph = filterObj(graph, (_, key) => dependency.keys.includes(key));
+        const filteredGraph = filterObj(graph, (_, key) =>
+          dependency.keys.includes(key),
+        );
         const dataCollection = mapObj(filteredGraph, (value) => value.data);
         const dataCollectionProxy = new Proxy(dataCollection, {
           get(collection, prop) {
             if (prop in collection) return collection[prop as string];
-            throw new Error(`To access '${prop.toString()}' in dependency ${index + 1} of '${nodeKey}' add it to the 'keys' array`);
+            throw new Error(
+              `To access '${prop.toString()}' in dependency ${
+                index + 1
+              } of '${nodeKey}' add it to the 'keys' array`,
+            );
           },
         });
 
-        if (typeof dependency.cond === 'function' ? dependency.cond(dataCollectionProxy) : !!dependency.cond) {
-          const dependencyEffects = typeof dependency.effects === 'function' ? dependency.effects(dataCollectionProxy) : dependency.effects;
+        if (
+          typeof dependency.cond === 'function'
+            ? dependency.cond(dataCollectionProxy)
+            : !!dependency.cond
+        ) {
+          const dependencyEffects =
+            typeof dependency.effects === 'function'
+              ? dependency.effects(dataCollectionProxy)
+              : dependency.effects;
           mergedData = merge(mergedData, dependencyEffects);
         }
       });
@@ -61,34 +87,55 @@ function buildGraphNode(config: BaseConfigsWithBuiltDependencies[string], nodeKe
       currentDependencies = dependencies ?? [];
     },
     setData: (updater) => {
-      currentData = typeof updater === 'function' ? updater(currentData) : updater;
+      currentData =
+        typeof updater === 'function' ? updater(currentData) : updater;
     },
   };
 }
 
-function baseCreateStore<Configs extends BaseConfigs, Collection extends TypeCollection>(
+function baseCreateStore<
+  Configs extends BaseConfigs,
+  Collection extends TypeCollection,
+>(
   configs: Configs,
   options: ConfigureStoreOptions<Collection>,
 ): Store<Configs> {
   const configsWithDefaults = mapObj(configs as BaseConfigs, (value) => {
-    return { ...value, data: merge(value.data, options.defaults?.[value.type]) };
+    return {
+      ...value,
+      data: merge(value.data, options.defaults?.[value.type]),
+    };
   });
 
-  const configWithBuiltDependencies = mapObj(configsWithDefaults, buildDependencies);
-  const graph: Graph = mapObj(configWithBuiltDependencies as BaseConfigsWithBuiltDependencies, buildGraphNode);
+  const configWithBuiltDependencies = mapObj(
+    configsWithDefaults,
+    buildDependencies,
+  );
+  const graph: Graph = mapObj(
+    configWithBuiltDependencies as BaseConfigsWithBuiltDependencies,
+    buildGraphNode,
+  );
   const subscribers: Subscribers = new Set();
-  let dependencyMap = buildDependencyMap(configWithBuiltDependencies as BaseConfigsWithBuiltDependencies);
+  let dependencyMap = buildDependencyMap(
+    configWithBuiltDependencies as BaseConfigsWithBuiltDependencies,
+  );
 
   /**
    * Dependencies
    */
-  function calculateDependencies(changedKeys: Array<keyof typeof graph> = Object.keys(graph)) {
+  function calculateDependencies(
+    changedKeys: Array<keyof typeof graph> = Object.keys(graph),
+  ) {
     const dependentKeysToCalculate = new Set(changedKeys);
 
     while (dependentKeysToCalculate.size > 0) {
-      const filteredGraph = filterObj(graph, (_, key) => dependentKeysToCalculate.has(key));
+      const filteredGraph = filterObj(graph, (_, key) =>
+        dependentKeysToCalculate.has(key),
+      );
       // calculateNextEffects returns `true` if the calculation resulted in a new set of effects
-      const results = mapObj(filteredGraph, (value) => value.calculateNextEffects(graph));
+      const results = mapObj(filteredGraph, (value) =>
+        value.calculateNextEffects(graph),
+      );
       // Only follow a dependency chain if it changed
       const filteredResults = filterObj(results, (value) => !!value);
 
@@ -117,12 +164,20 @@ function baseCreateStore<Configs extends BaseConfigs, Collection extends TypeCol
       return snapshot;
     },
     reset(config, { data = true, dependencies = false } = {}) {
-      const configWithBuiltDependencies = mapObj(config as any, buildDependencies);
-      walkObj(configWithBuiltDependencies as BaseConfigsWithBuiltDependencies, (value, key) => {
-        data && graph[key].resetData(value.data, options.defaults);
-        dependencies && graph[key].resetDependencies(value.dependencies);
-      });
-      dependencyMap = buildDependencyMap(configWithBuiltDependencies as BaseConfigsWithBuiltDependencies);
+      const configWithBuiltDependencies = mapObj(
+        config as any,
+        buildDependencies,
+      );
+      walkObj(
+        configWithBuiltDependencies as BaseConfigsWithBuiltDependencies,
+        (value, key) => {
+          data && graph[key].resetData(value.data, options.defaults);
+          dependencies && graph[key].resetDependencies(value.dependencies);
+        },
+      );
+      dependencyMap = buildDependencyMap(
+        configWithBuiltDependencies as BaseConfigsWithBuiltDependencies,
+      );
       calculateDependencies();
       updateSnapshot();
       subscribers.forEach((subscriber) => subscriber());
@@ -142,8 +197,12 @@ function baseCreateStore<Configs extends BaseConfigs, Collection extends TypeCol
   };
 }
 
-export function configureStore<Collection extends TypeCollection>(options: ConfigureStoreOptions<Collection>) {
-  function createStore<GraphTypes extends { [GraphKey in keyof GraphTypes]: keyof Collection }>(config: {
+export function configureStore<Collection extends TypeCollection>(
+  options: ConfigureStoreOptions<Collection>,
+) {
+  function createStore<
+    GraphTypes extends { [GraphKey in keyof GraphTypes]: keyof Collection },
+  >(config: {
     keys: {
       [GraphKey in keyof GraphTypes]: {
         type: GraphTypes[GraphKey];
@@ -181,4 +240,14 @@ export function configureStore<Collection extends TypeCollection>(options: Confi
 }
 
 /* Re-export types */
-export type { BaseConfigs, ConfigureStoreOptions, Data, Graph, RecursivePartial, Store, StoreSnapshot, TypeCollection, Updater } from './index.type';
+export type {
+  BaseConfigs,
+  ConfigureStoreOptions,
+  Data,
+  Graph,
+  RecursivePartial,
+  Store,
+  StoreSnapshot,
+  TypeCollection,
+  Updater,
+} from './index.type';
