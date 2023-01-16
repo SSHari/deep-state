@@ -1,109 +1,100 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { Updater } from 'deep-state-core';
-import {
-  BuildDeepState,
-  useDeepState,
-  useDeepStateUpdate,
-  type InferDeepStateFromProps,
-} from './index';
+import { BuildDeepStateForm, type InferDeepStateFromProps } from './index';
 import './demo.css';
 
-type Collection = {
-  'text-field': { label: string };
-  'select-field': { count: number };
-};
+function TextField(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  return <input {...props} />;
+}
 
-const { DeepStateProvider, buildProps, useDeepStateProviderRef } =
-  BuildDeepState<Collection>({
-    defaults: {
-      'text-field': { label: 'name' },
-      'select-field': { count: 2 },
+function NumberField(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  return <input {...props} />;
+}
+
+const { FormProvider, buildProps, useFormProviderRef } = BuildDeepStateForm({
+  fields: {
+    text: {
+      component: TextField,
+      valueProp: 'value',
+      defaultProps: (update) => ({
+        onChange: (event) =>
+          update((prev) => ({ ...prev, value: event.target.value })),
+      }),
     },
-  });
+    number: {
+      component: NumberField,
+      valueProp: 'value',
+      defaultProps: (update) => ({
+        onChange: (event) =>
+          update((prev) => ({ ...prev, value: event.target.value })),
+      }),
+    },
+    button: {
+      component: (props: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
+        <button {...props} />
+      ),
+    },
+  },
+});
 
 const props = buildProps({
   onChange: console.log,
-  keys: {
+  fields: {
     fieldA: {
-      type: 'text-field',
-      data: { label: '' },
+      type: 'text',
+      props: { name: '' },
+      dependencies: (build) => [
+        build({ keys: ['fieldA'], cond: true, effects: {} }),
+      ],
     },
     fieldB: {
-      type: 'select-field',
-      data: { count: 2 },
-      dependencies: (buildDependency) => [
-        buildDependency({
+      type: 'number',
+      props: { max: 2 },
+      dependencies: (build) => [
+        build({
           keys: ['fieldA', 'fieldB'],
-          cond: (data) => data.fieldA.label === '',
-          effects: (data) => ({
-            count: parseInt(data.fieldA.label) + data.fieldB.count,
-          }),
+          cond: (props) => props.fieldA.name === '',
+          effects: (props) => ({ max: props.fieldA.max }),
         }),
       ],
     },
   },
 });
 
-function DeepStateChild<Data extends any>(props: {
-  stateKey: string;
-  initialData?: Data;
-  render: (
-    data: Data | undefined,
-    update: (updater: Updater<Data>) => void,
-  ) => React.ReactNode;
-}) {
-  const data: Data = useDeepState({
-    selector: (state) => state[props.stateKey],
-  });
-  const update = useDeepStateUpdate();
-
-  return (
-    <>
-      {props.render(data ?? props.initialData, (updater) =>
-        update(props.stateKey, updater as any),
-      )}
-    </>
-  );
-}
-
 function App() {
   const deepStateRef =
-    useDeepStateProviderRef<InferDeepStateFromProps<typeof props>>();
+    useFormProviderRef<InferDeepStateFromProps<typeof props>>();
 
   return (
-    <DeepStateProvider ref={deepStateRef} {...props}>
-      <DeepStateChild
-        stateKey="fieldB"
-        initialData={props.keys.fieldB.data}
-        render={(data, update) => {
-          return (
-            <>
-              <div>Field B</div>
-              <div>{JSON.stringify(data, null, 2)}</div>
-              <button
-                onClick={() =>
-                  update({ count: Math.floor(Math.random() * 100) })
-                }
-              >
-                Change
-              </button>
-              <label>
-                Count
-                <input
-                  value={data?.count}
-                  onChange={(event) =>
-                    deepStateRef.current?.update('fieldB', {
-                      count: +event.target.value,
-                    })
-                  }
-                />
-              </label>
-            </>
-          );
-        }}
-      />
-    </DeepStateProvider>
+    <FormProvider
+      onChange={(values, props, changedKeys) => {
+        console.log(values, props, changedKeys);
+      }}
+      ref={deepStateRef}
+      fields={{
+        fieldA: {
+          type: 'text',
+          props: { value: 'Text' },
+          dependencies: (build) => [
+            build({
+              keys: ['fieldB'],
+              cond: (data) => parseInt(data.fieldB.value as string) === 100,
+              effects: { value: 'Hi', disabled: true },
+            }),
+          ],
+        },
+        fieldB: { type: 'number', props: { value: 100, type: 'number' } },
+        fieldC: { type: 'button', props: { children: 'My Button' } },
+      }}
+    >
+      {({ Field }) => (
+        <>
+          <Field field="fieldA" />
+          <Field field="fieldB" />
+          <Field field="fieldC" />
+        </>
+      )}
+    </FormProvider>
   );
 }
 

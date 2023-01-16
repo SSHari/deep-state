@@ -139,3 +139,8 @@ export function deepEquals(a: any, b: any) {
 
   return a === b;
 }
+
+/**
+ * No op
+ */
+export function noop() {}

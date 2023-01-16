@@ -239,6 +239,9 @@ export function configureStore<Collection extends TypeCollection>(
   return createStore;
 }
 
+/* Re-export utils */
+export * from './utils';
+
 /* Re-export types */
 export type {
   BaseConfigs,
