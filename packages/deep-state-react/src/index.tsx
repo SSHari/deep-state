@@ -33,30 +33,75 @@ type WithUpdater<T> = (updater: Updater<T>) => void;
 type BuildProps<Props> = (update: WithUpdater<Props>) => Props;
 
 type DeepStateFormProviderProps<
-  Fields extends BaseFields,
-  Configs extends BaseConfigs,
-> = React.PropsWithChildren<{
-  fields: Fields;
-  onChange(
-    values: Record<string, any>,
-    data: StoreSnapshot<Configs>,
-    changedKeys: (keyof StoreSnapshot<Configs>)[],
-  ): void;
+  Collection extends TypeCollection = TypeCollection,
+  GraphTypes extends {
+    [GraphKey in keyof GraphTypes]: keyof Collection;
+  } = Record<string, keyof Collection>,
+> = {
+  ref?: DeepStateFormProviderRef<DeepStateFormProviderProps['fields']>;
+  children?: (config: {
+    Field: React.FC<{ field: keyof GraphTypes }>;
+  }) => React.ReactNode;
+  onChange: (
+    values: { [GraphKey in keyof GraphTypes]: any },
+    propss: {
+      [GraphKey in keyof GraphTypes]: InferFieldProps<
+        Collection[GraphTypes[GraphKey]]
+      >;
+    },
+    changedKeys: (keyof GraphTypes)[],
+  ) => void;
+  fields: {
+    [GraphKey in keyof GraphTypes]: {
+      type: GraphTypes[GraphKey];
+      props?: InferFieldProps<Collection[GraphTypes[GraphKey]]>;
+      dependencies?: <
+        Build extends <
+          DependencyKeys extends Array<keyof GraphTypes>,
+        >(dependency: {
+          keys: DependencyKeys;
+          cond:
+            | true
+            | ((props: {
+                [DependencyKey in DependencyKeys[number]]: InferFieldProps<
+                  Collection[GraphTypes[DependencyKey]]
+                >;
+              }) => boolean);
+          effects:
+            | RecursivePartial<
+                InferFieldProps<Collection[GraphTypes[GraphKey]]>
+              >
+            | ((props: {
+                [DependencyKey in DependencyKeys[number]]: InferFieldProps<
+                  Collection[GraphTypes[DependencyKey]]
+                >;
+              }) => RecursivePartial<
+                InferFieldProps<Collection[GraphTypes[GraphKey]]>
+              >);
+        }) => typeof dependency,
+      >(
+        build: Build,
+      ) => Array<{
+        keys: Array<keyof GraphTypes>;
+        cond: true | ((data: any) => boolean);
+        effects: Record<string, any> | ((data: any) => Record<string, any>);
+      }>;
+    };
+  };
+};
+
+type DeepStateFormProviderRef<Fields extends BaseFields> = React.ForwardedRef<{
+  update: Store<Fields>['update'];
+  reset: Store<Fields>['reset'];
 }>;
 
-type DeepStateFormProviderRef<Configs extends BaseConfigs> =
-  React.ForwardedRef<{
-    update: Store<Configs>['update'];
-    reset: Store<Configs>['reset'];
-  }>;
-
-type DeepStateContextValue<Configs extends BaseConfigs> = {
-  store: Store<Configs>;
+type DeepStateContextValue<Fields extends BaseFields> = {
+  store: Store<Fields>;
   config: { keyToTypeMap: Record<string, string> };
 };
 
 const DeepStateContext =
-  createContext<DeepStateContextValue<BaseConfigs> | null>(null);
+  createContext<DeepStateContextValue<BaseFields> | null>(null);
 
 type InferFieldProps<Field> = Field extends React.FC<infer Props>
   ? Props
@@ -102,66 +147,15 @@ export function BuildDeepStateForm<Collection extends TypeCollection>(options: {
   function DeepStateFormProvider<
     GraphTypes extends { [GraphKey in keyof GraphTypes]: keyof Collection },
   >(
-    props: {
-      // Have to add `ref` to the type because of the `forwardRef` override
-      // `forwardRef` doesn't respect the type of the props in this complex type
-      ref?: DeepStateFormProviderRef<BaseConfigs>;
-      children: (config: {
-        Field: React.FC<{ field: keyof GraphTypes }>;
-      }) => React.ReactNode;
-      onChange: (
-        values: { [GraphKey in keyof GraphTypes]: any },
-        propss: {
-          [GraphKey in keyof GraphTypes]: InferFieldProps<
-            Collection[GraphTypes[GraphKey]]
-          >;
-        },
-        changedKeys: (keyof GraphTypes)[],
-      ) => void;
-      fields: {
-        [GraphKey in keyof GraphTypes]: {
-          type: GraphTypes[GraphKey];
-          props?: InferFieldProps<Collection[GraphTypes[GraphKey]]>;
-          dependencies?: <
-            Build extends <
-              DependencyKeys extends Array<keyof GraphTypes>,
-            >(dependency: {
-              keys: DependencyKeys;
-              cond:
-                | true
-                | ((props: {
-                    [DependencyKey in DependencyKeys[number]]: InferFieldProps<
-                      Collection[GraphTypes[DependencyKey]]
-                    >;
-                  }) => boolean);
-              effects:
-                | RecursivePartial<
-                    InferFieldProps<Collection[GraphTypes[GraphKey]]>
-                  >
-                | ((props: {
-                    [DependencyKey in DependencyKeys[number]]: InferFieldProps<
-                      Collection[GraphTypes[DependencyKey]]
-                    >;
-                  }) => RecursivePartial<
-                    InferFieldProps<Collection[GraphTypes[GraphKey]]>
-                  >);
-            }) => typeof dependency,
-          >(
-            build: Build,
-          ) => Array<{
-            keys: Array<keyof GraphTypes>;
-            cond: true | ((data: any) => boolean);
-            effects: Record<string, any> | ((data: any) => Record<string, any>);
-          }>;
-        };
-      };
-    },
-    ref: DeepStateFormProviderRef<BaseConfigs>,
+    props: DeepStateFormProviderProps<Collection, GraphTypes>,
+    ref: DeepStateFormProviderRef<
+      DeepStateFormProviderProps<Collection, GraphTypes>['fields']
+    >,
   ) {
     const updateRef =
       useRef<(key: string, updater: Updater<any>) => void>(noop);
 
-    const [contextValue] = useState<DeepStateContextValue<BaseConfigs>>(() => {
+    const [contextValue] = useState<DeepStateContextValue<BaseFields>>(() => {
       const keys = mapObj(
         props.fields,
         (field: BaseFields[string], fieldKey) => {
@@ -229,7 +223,7 @@ export function BuildDeepStateForm<Collection extends TypeCollection>(options: {
 
     return (
       <DeepStateContext.Provider value={contextValue}>
-        {props.children({
+        {props.children?.({
           Field: DeepStateField as React.FC<{ field: keyof GraphTypes }>,
         })}
       </DeepStateContext.Provider>
@@ -238,83 +232,23 @@ export function BuildDeepStateForm<Collection extends TypeCollection>(options: {
 
   function buildProps<
     GraphTypes extends { [GraphKey in keyof GraphTypes]: keyof Collection },
-  >(
-    props: Omit<
-      {
-        // Have to add `ref` to the type because of the `forwardRef` override
-        // `forwardRef` doesn't respect the type of the props in this complex type
-        ref?: DeepStateFormProviderRef<BaseConfigs>;
-        children: (config: {
-          Field: React.FC<{ field: keyof GraphTypes }>;
-        }) => React.ReactNode;
-        onChange: (
-          values: { [GraphKey in keyof GraphTypes]: any },
-          propss: {
-            [GraphKey in keyof GraphTypes]: InferFieldProps<
-              Collection[GraphTypes[GraphKey]]
-            >;
-          },
-          changedKeys: (keyof GraphTypes)[],
-        ) => void;
-        fields: {
-          [GraphKey in keyof GraphTypes]: {
-            type: GraphTypes[GraphKey];
-            props?: InferFieldProps<Collection[GraphTypes[GraphKey]]>;
-            dependencies?: <
-              Build extends <
-                DependencyKeys extends Array<keyof GraphTypes>,
-              >(dependency: {
-                keys: DependencyKeys;
-                cond:
-                  | true
-                  | ((props: {
-                      [DependencyKey in DependencyKeys[number]]: InferFieldProps<
-                        Collection[GraphTypes[DependencyKey]]
-                      >;
-                    }) => boolean);
-                effects:
-                  | RecursivePartial<
-                      InferFieldProps<Collection[GraphTypes[GraphKey]]>
-                    >
-                  | ((props: {
-                      [DependencyKey in DependencyKeys[number]]: InferFieldProps<
-                        Collection[GraphTypes[DependencyKey]]
-                      >;
-                    }) => RecursivePartial<
-                      InferFieldProps<Collection[GraphTypes[GraphKey]]>
-                    >);
-              }) => typeof dependency,
-            >(
-              build: Build,
-            ) => Array<{
-              keys: Array<keyof GraphTypes>;
-              cond: true | ((data: any) => boolean);
-              effects:
-                | Record<string, any>
-                | ((data: any) => Record<string, any>);
-            }>;
-          };
-        };
-      },
-      'children'
-    >,
-  ) {
+  >(props: DeepStateFormProviderProps<Collection, GraphTypes>) {
     return props;
   }
 
   function useDeepStateFormProviderRef<
-    Configs extends BaseConfigs = BaseConfigs,
+    Fields extends BaseFields,
   >(): React.MutableRefObject<{
-    update: Store<Configs>['update'];
-    reset: Store<Configs>['reset'];
+    update: Store<Fields>['update'];
+    reset: Store<Fields>['reset'];
   } | null> {
     return useRef(null);
   }
 
   return {
     FormProvider: forwardRef(
-      DeepStateFormProvider as any,
-    ) as unknown as typeof DeepStateFormProvider,
+      DeepStateFormProvider,
+    ) as typeof DeepStateFormProvider,
     buildProps,
     useFormProviderRef: useDeepStateFormProviderRef,
   };
@@ -329,7 +263,7 @@ function buildOnChangeWrapper({
   initialData,
   valueProps,
 }: BuildOnChangeWrapperOptions) {
-  let onChange: DeepStateFormProviderProps<BaseFields, BaseConfigs>['onChange'];
+  let onChange: DeepStateFormProviderProps['onChange'];
   let lastData = initialData;
 
   return {
@@ -348,25 +282,18 @@ function buildOnChangeWrapper({
 
       onChange(values, data, changedKeys);
     },
-    updateOnChange(
-      newOnChange: DeepStateFormProviderProps<
-        BaseFields,
-        BaseConfigs
-      >['onChange'],
-    ) {
+    updateOnChange(newOnChange: DeepStateFormProviderProps['onChange']) {
       onChange = newOnChange;
     },
   };
 }
 
-type UseDeepStateStoreOptions<Configs extends BaseConfigs> = {
-  selector: (snapshot: StoreSnapshot<Configs>) => any;
+type UseDeepStateStoreOptions<Fields extends BaseFields> = {
+  selector: (snapshot: StoreSnapshot<Fields>) => any;
 };
 
-function useDeepStateStore<Configs extends BaseConfigs>() {
-  const context = useContext(
-    DeepStateContext,
-  ) as DeepStateContextValue<Configs>;
+function useDeepStateStore<Fields extends BaseFields>() {
+  const context = useContext(DeepStateContext) as DeepStateContextValue<Fields>;
 
   if (!context) {
     throw new Error(
@@ -377,22 +304,22 @@ function useDeepStateStore<Configs extends BaseConfigs>() {
   return context;
 }
 
-export function useDeepStateUpdate<Configs extends BaseConfigs>() {
-  const context = useDeepStateStore<Configs>();
+export function useDeepStateUpdate<Fields extends BaseFields>() {
+  const context = useDeepStateStore<Fields>();
   useDebugValue(context.store.update);
   return context.store.update;
 }
 
-export function useDeepStateReset<Configs extends BaseConfigs>() {
-  const context = useDeepStateStore<Configs>();
+export function useDeepStateReset<Fields extends BaseFields>() {
+  const context = useDeepStateStore<Fields>();
   useDebugValue(context.store.reset);
   return context.store.reset;
 }
 
-export function useDeepState<Configs extends BaseConfigs>({
+export function useDeepState<Fields extends BaseFields>({
   selector = (state) => state,
-}: UseDeepStateStoreOptions<Configs>) {
-  const { store, config } = useDeepStateStore<Configs>();
+}: UseDeepStateStoreOptions<Fields>) {
+  const { store, config } = useDeepStateStore<Fields>();
   const selectedValue = useSyncExternalStore(store.subscribe, () =>
     selector(store.getSnapshot()),
   );
@@ -400,6 +327,5 @@ export function useDeepState<Configs extends BaseConfigs>({
   return { props: selectedValue, config };
 }
 
-export type InferDeepStateFromProps<
-  Props extends DeepStateFormProviderProps<BaseFields, BaseConfigs>,
-> = Props['fields'];
+export type InferDeepStateFromProps<Props extends { fields: any }> =
+  Props['fields'];
