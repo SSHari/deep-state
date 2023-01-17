@@ -12,6 +12,9 @@ function NumberField(props: React.InputHTMLAttributes<HTMLInputElement>) {
 }
 
 const { FormProvider, buildProps, useFormProviderRef } = BuildDeepStateForm({
+  form: {
+    // defaultProps: { style: { display: 'flex', flexDirection: 'column' } },
+  },
   fields: {
     text: {
       component: TextField,
@@ -37,8 +40,14 @@ const { FormProvider, buildProps, useFormProviderRef } = BuildDeepStateForm({
   },
 });
 
+function FormWrapper(props: Record<'hi', string>) {
+  return <>HI</>;
+}
+
 const props = buildProps({
+  // form: { wrapper: FormWrapper },
   onChange: console.log,
+  onSubmit: console.log,
   fields: {
     fieldA: {
       type: 'text',
@@ -67,9 +76,16 @@ function App() {
 
   return (
     <FormProvider
+      style={{ display: 'flex', flexDirection: 'column', gap: 50 }}
+      form={
+        {
+          // props: { style: { display: 'flex', flexDirection: 'column', gap: 50 } },
+        }
+      }
       onChange={(values, props, changedKeys) => {
         console.log(values, props, changedKeys);
       }}
+      onSubmit={console.log}
       ref={deepStateRef}
       fields={{
         fieldA: {
