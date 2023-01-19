@@ -10,14 +10,13 @@ import {
 import type {
   BaseConfigs,
   BaseConfigsWithBuiltDependencies,
-  ConfigureStoreOptions,
   Data,
   Graph,
   RecursivePartial,
   Subscribers,
   Store,
   StoreSnapshot,
-  TypeCollection,
+  DataCollection,
 } from './index.type';
 
 function buildDependencies(
@@ -78,8 +77,8 @@ function buildGraphNode(
 
       return false;
     },
-    resetData: (data, defaults) => {
-      currentData = merge(data ?? {}, defaults?.[config.type]);
+    resetData: (data) => {
+      currentData = data ?? {};
       prevMergedData = {};
       mergedData = {};
     },
@@ -93,22 +92,11 @@ function buildGraphNode(
   };
 }
 
-function baseCreateStore<
-  Configs extends BaseConfigs,
-  Collection extends TypeCollection,
->(
+function baseCreateStore<Configs extends BaseConfigs>(
   configs: Configs,
-  options: ConfigureStoreOptions<Collection>,
 ): Store<Configs> {
-  const configsWithDefaults = mapObj(configs as BaseConfigs, (value) => {
-    return {
-      ...value,
-      data: merge(value.data, options.defaults?.[value.type]),
-    };
-  });
-
   const configWithBuiltDependencies = mapObj(
-    configsWithDefaults,
+    configs as BaseConfigs,
     buildDependencies,
   );
   const graph: Graph = mapObj(
@@ -171,7 +159,7 @@ function baseCreateStore<
       walkObj(
         configWithBuiltDependencies as BaseConfigsWithBuiltDependencies,
         (value, key) => {
-          data && graph[key].resetData(value.data, options.defaults);
+          data && graph[key].resetData(value.data);
           dependencies && graph[key].resetDependencies(value.dependencies);
         },
       );
@@ -197,9 +185,7 @@ function baseCreateStore<
   };
 }
 
-export function configureStore<Collection extends TypeCollection>(
-  options: ConfigureStoreOptions<Collection>,
-) {
+export function configureStore<Collection extends DataCollection>() {
   function createStore<
     GraphTypes extends { [GraphKey in keyof GraphTypes]: keyof Collection },
   >(config: {
@@ -233,7 +219,7 @@ export function configureStore<Collection extends TypeCollection>(
       };
     };
   }) {
-    return baseCreateStore(config.keys, options);
+    return baseCreateStore(config.keys);
   }
 
   return createStore;
@@ -245,12 +231,11 @@ export * from './utils';
 /* Re-export types */
 export type {
   BaseConfigs,
-  ConfigureStoreOptions,
   Data,
   Graph,
   RecursivePartial,
   Store,
   StoreSnapshot,
-  TypeCollection,
+  DataCollection,
   Updater,
 } from './index.type';

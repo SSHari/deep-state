@@ -8,11 +8,7 @@ export type RecursivePartial<T> = {
 
 export type Data = Record<string, any>;
 
-export type TypeCollection = Record<string, Data>;
-
-export type ConfigureStoreOptions<Collection extends TypeCollection> = {
-  defaults?: RecursivePartial<Collection>;
-};
+export type DataCollection = Record<string, Data>;
 
 export type BaseConfigs = {
   [Key: string]: {
@@ -42,10 +38,7 @@ export type Graph = {
   [x: string]: {
     readonly data: Record<string, any>;
     calculateNextEffects(graph: Graph): boolean;
-    resetData: (
-      data?: Data,
-      defaults?: ConfigureStoreOptions<TypeCollection>['defaults'],
-    ) => void;
+    resetData: (data?: Data) => void;
     resetDependencies: (
       dependencies?: BaseConfigsWithBuiltDependencies[keyof BaseConfigsWithBuiltDependencies]['dependencies'],
     ) => void;

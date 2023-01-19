@@ -20,7 +20,7 @@ function FormWrapper() {
 }
 
 const { Form, buildProps, useFormRef } = Builder.form({
-  form: { wrapper: FormWrapper },
+  // form: { wrapper: FormWrapper },
   fields: {
     text: Builder.field(TextField)
       .valueProp('value')

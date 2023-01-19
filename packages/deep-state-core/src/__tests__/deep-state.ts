@@ -1,8 +1,6 @@
 import { configureStore } from '../index';
 
-const createStore = configureStore<TestCollection>({
-  defaults: { 'key-one': { name: 'Default Name' } },
-});
+const createStore = configureStore<TestCollection>();
 
 it('overwrites the old data on a static update', () => {
   const depState = buildStore();
@@ -205,10 +203,10 @@ it("doesn't allow access to key data in a composite dependency if the key isn't 
         'key-one': {
           type: 'key-one',
           data: { key: 0 },
-          // @ts-ignore
           dependencies: (build) => [
             build({
               keys: [],
+              // @ts-ignore
               cond: (data) => !!data['key-one'].key,
               effects: {},
             }),
@@ -301,7 +299,7 @@ it('allows a cond to be set to true for effects which should always be applied',
   });
 
   expect(depState.getSnapshot()).toEqual({
-    'key-one': { name: 'Default Name', value: 1 },
+    'key-one': { value: 1 },
     'key-two': { value: 1 },
     'key-three': { value: 2 },
   });
@@ -378,7 +376,7 @@ it('resets the data for the keys in the reset config', () => {
     },
   });
   expect(depState.getSnapshot()).toEqual({
-    'key-one': { name: 'Default Name', value: 'initial' },
+    'key-one': { value: 'initial' },
     'key-two': { value: 'initial' },
     'key-three': { value: 'initial' },
   });
@@ -401,7 +399,7 @@ it('resets the data for the keys in the reset config', () => {
     { dependencies: true },
   );
   expect(depState.getSnapshot()).toEqual({
-    'key-one': { name: 'Default Name', value: 'reset' },
+    'key-one': { value: 'reset' },
     'key-two': { value: 'reset' },
     'key-three': { value: 'reset' },
   });
@@ -432,7 +430,7 @@ it('should calculate dependencies for all keys on initialization', () => {
   });
 
   expect(depState.getSnapshot()).toEqual({
-    'key-one': { name: 'Default Name', key: 1 },
+    'key-one': { key: 1 },
     'key-two': { key: 2 },
   });
 });
@@ -470,7 +468,7 @@ it('should recalculate dependencies for all keys on a reset and notify subscribe
   depState.subscribe(subscriber);
 
   expect(depState.getSnapshot()).toEqual({
-    'key-one': { key: 0, name: 'Default Name', updated: false },
+    'key-one': { key: 0, updated: false },
     'key-two': { key: 0 },
     'key-three': {},
   });
@@ -482,7 +480,7 @@ it('should recalculate dependencies for all keys on a reset and notify subscribe
   });
   expect(subscriber).toHaveBeenCalledTimes(1);
   expect(depState.getSnapshot()).toEqual({
-    'key-one': { key: 1, name: 'Default Name', updated: true },
+    'key-one': { key: 1, updated: true },
     'key-two': { key: 2 },
     'key-three': {},
   });
@@ -514,7 +512,7 @@ function buildStore() {
     keys: {
       'key-one': {
         type: 'key-one',
-        data: { key: 1 },
+        data: { key: 1, name: 'Default Name' },
         dependencies: (build) => [
           build({
             keys: ['key-one'],

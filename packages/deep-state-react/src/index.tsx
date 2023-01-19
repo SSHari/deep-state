@@ -167,9 +167,7 @@ export const Builder = {
     const formConfig = new Form(config.fields);
     type FormFieldTypes = InferForm<typeof formConfig>;
 
-    // TODO: Remove defaults from the core logic
-    // const createStore = configureStore(options);
-    const createStore = configureStore({});
+    const createStore = configureStore<Fields>();
 
     function DeepStateField<FieldProps extends { field: string }>({
       field,
