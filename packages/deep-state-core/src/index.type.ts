@@ -16,7 +16,7 @@ export type BaseConfigs = {
     data?: Data;
     dependencies?: (build: (dependency: any) => typeof dependency) => Array<{
       keys: Array<any>;
-      cond: true | ((data: any) => boolean);
+      cond?: (data: any) => boolean;
       effects: Data | ((data: any) => Data);
     }>;
   };
@@ -28,7 +28,7 @@ export type BaseConfigsWithBuiltDependencies = {
     data?: Data;
     dependencies?: Array<{
       keys: Array<any>;
-      cond: true | ((data: any) => boolean);
+      cond?: (data: any) => boolean;
       effects: Data | ((data: any) => Data);
     }>;
   };

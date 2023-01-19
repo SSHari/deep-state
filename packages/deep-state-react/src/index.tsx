@@ -110,13 +110,11 @@ type DeepStateFormProviderProps<
           DependencyKeys extends Array<keyof GraphTypes>,
         >(dependency: {
           keys: DependencyKeys;
-          cond:
-            | true
-            | ((props: {
-                [DependencyKey in DependencyKeys[number]]: ComponentProps<
-                  FormFieldTypes[GraphTypes[DependencyKey]]['component']
-                >;
-              }) => boolean);
+          cond?: (props: {
+            [DependencyKey in DependencyKeys[number]]: ComponentProps<
+              FormFieldTypes[GraphTypes[DependencyKey]]['component']
+            >;
+          }) => boolean;
           effects:
             | RecursivePartial<
                 ComponentProps<
@@ -137,7 +135,7 @@ type DeepStateFormProviderProps<
         build: Build,
       ) => Array<{
         keys: Array<keyof GraphTypes>;
-        cond: true | ((data: any) => boolean);
+        cond?: (data: any) => boolean;
         effects: Record<string, any> | ((data: any) => Record<string, any>);
       }>;
     };

@@ -261,14 +261,14 @@ it("doesn't allow access to key data in a composite dependency if the key isn't 
   );
 });
 
-it('allows a cond to be set to true for effects which should always be applied', () => {
+it('allows a cond to be undefined for effects which should always be applied', () => {
   const depState = createStore({
     keys: {
       'key-one': {
         type: 'key-one',
         data: { value: 0 },
         dependencies: (build) => [
-          build({ keys: ['key-one'], cond: true, effects: { value: 1 } }),
+          build({ keys: ['key-one'], effects: { value: 1 } }),
         ],
       },
       'key-two': {
@@ -277,7 +277,6 @@ it('allows a cond to be set to true for effects which should always be applied',
         dependencies: (build) => [
           build({
             keys: ['key-one'],
-            cond: true,
             effects: (data) => ({ value: data['key-one'].value }),
           }),
         ],
@@ -288,7 +287,6 @@ it('allows a cond to be set to true for effects which should always be applied',
         dependencies: (build) => [
           build({
             keys: ['key-one', 'key-two'],
-            cond: true,
             effects: (data) => ({
               value: data['key-one'].value + data['key-two'].value,
             }),
@@ -412,7 +410,7 @@ it('should calculate dependencies for all keys on initialization', () => {
         type: 'key-one',
         data: { key: 0 },
         dependencies: (build) => [
-          build({ keys: ['key-one'], cond: true, effects: { key: 1 } }),
+          build({ keys: ['key-one'], effects: { key: 1 } }),
         ],
       },
       'key-two': {

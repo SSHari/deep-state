@@ -50,9 +50,7 @@ const props = buildProps({
     fieldA: {
       type: 'text',
       props: { name: '' },
-      dependencies: (build) => [
-        build({ keys: ['fieldA'], cond: true, effects: {} }),
-      ],
+      dependencies: (build) => [build({ keys: ['fieldA'], effects: {} })],
     },
     fieldB: {
       type: 'number',
@@ -91,7 +89,18 @@ function App() {
           ],
         },
         fieldB: { type: 'number', props: { value: 100, type: 'number' } },
-        fieldC: { type: 'button', props: { children: 'My Button' } },
+        fieldC: {
+          type: 'button',
+          props: { children: 'My Button' },
+          dependencies: (build) => [
+            build({
+              keys: ['fieldA'],
+              effects: (data) => ({
+                disabled: data.fieldA.value === 'disable',
+              }),
+            }),
+          ],
+        },
       }}
     >
       {({ Field }) => (

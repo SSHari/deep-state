@@ -58,9 +58,10 @@ function buildGraphNode(
         });
 
         if (
+          // An undefined `cond` implies the effect should always be applied
           typeof dependency.cond === 'function'
             ? dependency.cond(dataCollectionProxy)
-            : !!dependency.cond
+            : true
         ) {
           const dependencyEffects =
             typeof dependency.effects === 'function'
@@ -197,11 +198,9 @@ export function configureStore<Collection extends DataCollection>() {
           Build extends {
             <DependencyKeys extends Array<keyof GraphTypes>>(dependency: {
               keys: DependencyKeys;
-              cond:
-                | true
-                | ((data: {
-                    [DependencyKey in DependencyKeys[number]]: Collection[GraphTypes[DependencyKey]];
-                  }) => boolean);
+              cond?: (data: {
+                [DependencyKey in DependencyKeys[number]]: Collection[GraphTypes[DependencyKey]];
+              }) => boolean;
               effects:
                 | RecursivePartial<Collection[GraphTypes[GraphKey]]>
                 | ((data: {
@@ -213,7 +212,7 @@ export function configureStore<Collection extends DataCollection>() {
           build: Build,
         ) => Array<{
           keys: Array<keyof GraphTypes>;
-          cond: true | ((data: any) => boolean);
+          cond?: (data: any) => boolean;
           effects: Record<string, any> | ((data: any) => Record<string, any>);
         }>;
       };
