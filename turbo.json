@@ -11,6 +11,7 @@
     "dev": { "cache": false },
     "format": {},
     "format:check": {},
-    "test": {}
+    "test": {},
+    "typecheck": {}
   }
 }
