@@ -1,9 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BuildDeepStateForm, type InferDeepStateFromProps } from './index';
+import { type InferDeepStateFromProps, Builder } from './index';
 import './demo.css';
 
-function TextField(props: React.InputHTMLAttributes<HTMLInputElement>) {
+function TextField(
+  props: React.InputHTMLAttributes<HTMLInputElement> & {
+    requiredPropTest: string;
+  },
+) {
   return <input {...props} />;
 }
 
@@ -11,41 +15,35 @@ function NumberField(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} />;
 }
 
-const { FormProvider, buildProps, useFormProviderRef } = BuildDeepStateForm({
-  form: {
-    // defaultProps: { style: { display: 'flex', flexDirection: 'column' } },
-  },
-  fields: {
-    text: {
-      component: TextField,
-      valueProp: 'value',
-      defaultProps: (update) => ({
-        onChange: (event) =>
-          update((prev) => ({ ...prev, value: event.target.value })),
-      }),
-    },
-    number: {
-      component: NumberField,
-      valueProp: 'value',
-      defaultProps: (update) => ({
-        onChange: (event) =>
-          update((prev) => ({ ...prev, value: event.target.value })),
-      }),
-    },
-    button: {
-      component: (props: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
-        <button {...props} />
-      ),
-    },
-  },
-});
-
-function FormWrapper(props: Record<'hi', string>) {
+function FormWrapper() {
   return <>HI</>;
 }
 
+const { Form, buildProps, useFormRef } = Builder.form({
+  form: { wrapper: FormWrapper },
+  fields: {
+    text: Builder.field(TextField)
+      .valueProp('value')
+      .defaultProps((update) => ({
+        requiredPropTest: '',
+        onChange: (event) =>
+          update((prev) => ({ ...prev, value: event.target.value })),
+      })),
+    number: Builder.field(NumberField)
+      .valueProp('value')
+      .defaultProps((update) => ({
+        onChange: (event) =>
+          update((prev) => ({ ...prev, value: event.target.value })),
+      })),
+    button: Builder.field(
+      (props: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
+        <button {...props} />
+      ),
+    ),
+  },
+});
+
 const props = buildProps({
-  // form: { wrapper: FormWrapper },
   onChange: console.log,
   onSubmit: console.log,
   fields: {
@@ -71,22 +69,15 @@ const props = buildProps({
 });
 
 function App() {
-  const deepStateRef =
-    useFormProviderRef<InferDeepStateFromProps<typeof props>>();
+  const formRef = useFormRef<InferDeepStateFromProps<typeof props>>();
 
   return (
-    <FormProvider
-      style={{ display: 'flex', flexDirection: 'column', gap: 50 }}
-      form={
-        {
-          // props: { style: { display: 'flex', flexDirection: 'column', gap: 50 } },
-        }
-      }
+    <Form
       onChange={(values, props, changedKeys) => {
         console.log(values, props, changedKeys);
       }}
       onSubmit={console.log}
-      ref={deepStateRef}
+      ref={formRef}
       fields={{
         fieldA: {
           type: 'text',
@@ -110,7 +101,7 @@ function App() {
           <Field field="fieldC" />
         </>
       )}
-    </FormProvider>
+    </Form>
   );
 }
 
