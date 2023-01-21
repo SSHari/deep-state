@@ -96,18 +96,10 @@ function buildGraphNode(
 function baseCreateStore<Configs extends BaseConfigs>(
   configs: Configs,
 ): Store<Configs> {
-  const configWithBuiltDependencies = mapObj(
-    configs as BaseConfigs,
-    buildDependencies,
-  );
-  const graph: Graph = mapObj(
-    configWithBuiltDependencies as BaseConfigsWithBuiltDependencies,
-    buildGraphNode,
-  );
+  const configWithBuiltDependencies = mapObj(configs, buildDependencies);
+  const graph: Graph = mapObj(configWithBuiltDependencies, buildGraphNode);
   const subscribers: Subscribers = new Set();
-  let dependencyMap = buildDependencyMap(
-    configWithBuiltDependencies as BaseConfigsWithBuiltDependencies,
-  );
+  let dependencyMap = buildDependencyMap(configWithBuiltDependencies);
 
   /**
    * Dependencies
@@ -126,7 +118,7 @@ function baseCreateStore<Configs extends BaseConfigs>(
         value.calculateNextEffects(graph),
       );
       // Only follow a dependency chain if it changed
-      const filteredResults = filterObj(results, (value) => !!value);
+      const filteredResults = filterObj(results, Boolean);
 
       dependentKeysToCalculate.clear();
       walkObj(filteredResults, (_, key) => {
@@ -152,21 +144,20 @@ function baseCreateStore<Configs extends BaseConfigs>(
     getSnapshot() {
       return snapshot;
     },
-    reset(config, { data = true, dependencies = false } = {}) {
+    reset(updatedConfigs, { data = true, dependencies = false } = {}) {
+      const updatedConfigsWithTypes = mapObj(updatedConfigs, (value, key) => ({
+        ...value,
+        type: configs[key].type,
+      }));
       const configWithBuiltDependencies = mapObj(
-        config as any,
+        updatedConfigsWithTypes,
         buildDependencies,
       );
-      walkObj(
-        configWithBuiltDependencies as BaseConfigsWithBuiltDependencies,
-        (value, key) => {
-          data && graph[key].resetData(value.data);
-          dependencies && graph[key].resetDependencies(value.dependencies);
-        },
-      );
-      dependencyMap = buildDependencyMap(
-        configWithBuiltDependencies as BaseConfigsWithBuiltDependencies,
-      );
+      walkObj(configWithBuiltDependencies, (value, key) => {
+        data && graph[key].resetData(value.data);
+        dependencies && graph[key].resetDependencies(value.dependencies);
+      });
+      dependencyMap = buildDependencyMap(configWithBuiltDependencies);
       calculateDependencies();
       updateSnapshot();
       subscribers.forEach((subscriber) => subscriber());

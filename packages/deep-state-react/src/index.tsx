@@ -209,7 +209,7 @@ export const Builder = {
       const updateRef =
         useRef<(key: string, updater: Updater<any>) => void>(noop);
 
-      const [contextValue] = useState<DeepStateContextValue<BaseFields>>(() => {
+      const [contextValue] = useState(() => {
         const keys = mapObj(
           props.fields,
           (field: BaseFields[string], fieldKey) => {
@@ -234,23 +234,18 @@ export const Builder = {
         );
 
         const store = createStore({ keys });
-        const keyToTypeMap = mapObj(
-          props.fields,
-          ({ type }: BaseFields[string]) => type,
-        );
+        const keyToTypeMap = mapObj(props.fields, ({ type }) => type);
 
         updateRef.current = store.update;
 
         return {
           store,
           config: { keyToTypeMap },
-        };
+        } as DeepStateContextValue<BaseFields>;
       });
 
-      const fieldsWithValues = filterObj(
-        props.fields,
-        ({ type }: BaseFields[string]) =>
-          hasValueProp(formConfig._fields[type]),
+      const fieldsWithValues = filterObj(props.fields, ({ type }) =>
+        hasValueProp(formConfig._fields[type]),
       );
 
       const valueProps = mapObj(fieldsWithValues, ({ type }) => {

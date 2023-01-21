@@ -3,35 +3,35 @@ import type { BaseConfigsWithBuiltDependencies, Data } from './index.type';
 /**
  * Core Utils
  */
-export function mapObj<T, U>(
-  obj: Record<string, T>,
-  fn: (value: T, key: string) => U,
-) {
-  const map: Record<string, U> = {};
-  Object.entries(obj).forEach(([key, value]) => {
-    map[key] = fn(value, key);
+export function mapObj<Key extends string, Value, UpdatedValue>(
+  obj: Record<Key, Value>,
+  fn: (value: Value, key: Key) => UpdatedValue,
+): Record<Key, UpdatedValue> {
+  const map: Partial<Record<Key, UpdatedValue>> = {};
+  Object.entries<Value>(obj).forEach(([key, value]) => {
+    map[key as Key] = fn(value, key as Key);
   });
-  return map;
+  return map as Record<Key, UpdatedValue>;
 }
 
-export function filterObj<T>(
-  obj: Record<string, T>,
-  fn: (value: T, key: string) => boolean,
-) {
-  const filter: Record<string, T> = {};
-  Object.entries(obj).forEach(([key, value]) => {
-    if (fn(value, key)) {
-      filter[key] = value;
+export function filterObj<Key extends string, Value>(
+  obj: Record<Key, Value>,
+  fn: (value: Value, key: Key) => boolean,
+): Record<Key, Value> {
+  const filter: Partial<Record<Key, Value>> = {};
+  Object.entries<Value>(obj).forEach(([key, value]) => {
+    if (fn(value, key as Key)) {
+      filter[key as Key] = value;
     }
   });
-  return filter;
+  return filter as Record<Key, Value>;
 }
 
-export function walkObj<T>(
-  obj: Record<string, T>,
-  fn: (value: T, key: string) => void,
+export function walkObj<Key extends string, Value>(
+  obj: Record<Key, Value>,
+  fn: (value: Value, key: Key) => void,
 ) {
-  Object.entries(obj).forEach(([key, value]) => fn(value, key));
+  Object.entries<Value>(obj).forEach(([key, value]) => fn(value, key as Key));
 }
 
 export const identity = <T>(arg: T) => arg;
@@ -45,10 +45,7 @@ export function buildDependencyMap(configMap: {
     'type'
   >;
 }) {
-  const dependencyMap: Record<string, Set<string>> = mapObj(
-    configMap,
-    () => new Set(),
-  );
+  const dependencyMap = mapObj(configMap, () => new Set<string>());
 
   walkObj(configMap, ({ dependencies }, key) => {
     dependencies?.forEach((dependency) => {
