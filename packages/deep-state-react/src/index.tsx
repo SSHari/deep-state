@@ -102,39 +102,33 @@ type DeepStateFormProviderProps<
     [GraphKey in keyof GraphTypes]: {
       type: GraphTypes[GraphKey];
       props?: RemoveDefaultPropsFromRequired<
-        ComponentProps<FormFieldTypes[GraphTypes[GraphKey]]['component']>,
+        FormFieldTypes[GraphTypes[GraphKey]]['props'],
         FormFieldTypes[GraphTypes[GraphKey]]['defaultProps']
       >;
       dependencies?: <
         Build extends <
-          DependencyKeys extends Array<keyof GraphTypes>,
+          DependencyKeys extends Array<keyof GraphTypes | '_meta'>,
         >(dependency: {
-          keys: DependencyKeys;
-          cond?: (props: {
-            [DependencyKey in DependencyKeys[number]]: ComponentProps<
-              FormFieldTypes[GraphTypes[DependencyKey]]['component']
-            >;
+          keys: Array<DependencyKeys[number]>;
+          cond?: (data: {
+            [DependencyKey in DependencyKeys[number]]: DependencyKey extends keyof GraphTypes
+              ? FormFieldTypes[GraphTypes[DependencyKey]]['props']
+              : never;
           }) => boolean;
           effects:
-            | RecursivePartial<
-                ComponentProps<
-                  FormFieldTypes[GraphTypes[GraphKey]]['component']
-                >
-              >
-            | ((props: {
-                [DependencyKey in DependencyKeys[number]]: ComponentProps<
-                  FormFieldTypes[GraphTypes[DependencyKey]]['component']
-                >;
+            | RecursivePartial<FormFieldTypes[GraphTypes[GraphKey]]['props']>
+            | ((data: {
+            [DependencyKey in DependencyKeys[number]]: DependencyKey extends keyof GraphTypes
+              ? FormFieldTypes[GraphTypes[DependencyKey]]['props']
+              : never;
               }) => RecursivePartial<
-                ComponentProps<
-                  FormFieldTypes[GraphTypes[GraphKey]]['component']
-                >
+                FormFieldTypes[GraphTypes[GraphKey]]['props']
               >);
         }) => typeof dependency,
       >(
         build: Build,
       ) => Array<{
-        keys: Array<keyof GraphTypes>;
+        keys: Array<keyof GraphTypes | '_meta'>;
         cond?: (data: any) => boolean;
         effects: Record<string, any> | ((data: any) => Record<string, any>);
       }>;

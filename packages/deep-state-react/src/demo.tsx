@@ -57,9 +57,9 @@ const props = buildProps({
       props: { max: 2 },
       dependencies: (build) => [
         build({
-          keys: ['fieldA', 'fieldB'],
-          cond: (props) => props.fieldA.name === '',
-          effects: (props) => ({ max: props.fieldA.max }),
+          keys: ['fieldA', 'fieldB', '_meta'],
+          cond: (data) => data.fieldA.name === '',
+          effects: (data) => ({ max: data.fieldA.max }),
         }),
       ],
     },
