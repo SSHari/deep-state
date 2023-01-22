@@ -2,13 +2,30 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { type InferDeepStateFromProps, Builder } from './index';
 import './demo.css';
+import { mapObj } from 'deep-state-core';
 
-function TextField(
-  props: React.InputHTMLAttributes<HTMLInputElement> & {
-    requiredPropTest: string;
-  },
-) {
-  return <input {...props} />;
+function TextField({
+  error,
+  helperText,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement> & {
+  requiredPropTest: string;
+  error?: boolean;
+  helperText?: string;
+}) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '4px',
+        marginBottom: '8px',
+      }}
+    >
+      <input {...props} />
+      <span>{error && helperText}</span>
+    </div>
+  );
 }
 
 function NumberField(props: React.InputHTMLAttributes<HTMLInputElement>) {
@@ -28,7 +45,8 @@ const { Form, buildProps, useFormRef } = Builder.form({
         requiredPropTest: '',
         onChange: (event) =>
           update((prev) => ({ ...prev, value: event.target.value })),
-      })),
+      }))
+      .errorProps(({ error }) => ({ error: true, helperText: error })),
     number: Builder.field(NumberField)
       .valueProp('value')
       .defaultProps((update) => ({
@@ -57,8 +75,8 @@ const props = buildProps({
       props: { max: 2 },
       dependencies: (build) => [
         build({
-          keys: ['fieldA', 'fieldB'],
-          cond: (props) => props.fieldA.name === '',
+          keys: ['fieldA', 'fieldB', '_meta'],
+          cond: (props) => props.fieldA.name === '' || !!props._meta.isValid,
           effects: (props) => ({ max: props.fieldA.max }),
         }),
       ],
@@ -76,6 +94,13 @@ function App() {
       }}
       onSubmit={console.log}
       ref={formRef}
+      validate={async (values) => {
+        console.log('Validate', values);
+        // await new Promise((r) => setTimeout(r, 2000));
+        if (values.fieldA !== 'error') return { isValid: true };
+        const errors = mapObj(values, (k, j) => 'An error');
+        return { isValid: false, errors };
+      }}
       fields={{
         fieldA: {
           type: 'text',
@@ -88,16 +113,14 @@ function App() {
             }),
           ],
         },
-        fieldB: { type: 'number', props: { value: 100, type: 'number' } },
+        fieldB: { type: 'number', props: { value: 200, type: 'number' } },
         fieldC: {
           type: 'button',
           props: { children: 'My Button' },
           dependencies: (build) => [
             build({
-              keys: ['fieldA'],
-              effects: (data) => ({
-                disabled: data.fieldA.value === 'disable',
-              }),
+              keys: ['_meta'],
+              effects: (data) => ({ disabled: !data._meta.isValid }),
             }),
           ],
         },

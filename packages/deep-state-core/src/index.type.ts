@@ -10,15 +10,19 @@ export type Data = Record<string, any>;
 
 export type DataCollection = Record<string, Data>;
 
+export type Dependency = {
+  keys: Array<string>;
+  cond?: (data: any) => boolean;
+  effects: Data | ((data: any) => Data);
+};
+
 export type BaseConfigs = {
   [Key: string]: {
     type: any;
     data?: Data;
-    dependencies?: (build: (dependency: any) => typeof dependency) => Array<{
-      keys: Array<any>;
-      cond?: (data: any) => boolean;
-      effects: Data | ((data: any) => Data);
-    }>;
+    dependencies?: (
+      build: (dependency: any) => typeof dependency,
+    ) => Array<Dependency>;
   };
 };
 
@@ -26,11 +30,7 @@ export type BaseConfigsWithBuiltDependencies = {
   [Key: string]: {
     type: any;
     data?: Data;
-    dependencies?: Array<{
-      keys: Array<any>;
-      cond?: (data: any) => boolean;
-      effects: Data | ((data: any) => Data);
-    }>;
+    dependencies?: Array<Dependency>;
   };
 };
 

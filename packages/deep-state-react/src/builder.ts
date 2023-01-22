@@ -11,10 +11,15 @@ type DefaultPropsBuilder<
   | RecursivePartial<Props>
   | ((update: WithUpdater<Props>) => RecursivePartial<Props>);
 
+type ErrorPropsBuilder<Component extends BaseComponent> = (fieldMeta: {
+  error: string;
+}) => RecursivePartial<ComponentProps<Component>>;
+
 export class Field<Component extends BaseComponent> {
   _component: Component;
   _valueProp?: keyof ComponentProps<Component>;
   _defaultProps?: DefaultPropsBuilder<Component>;
+  _errorProps?: ErrorPropsBuilder<Component>;
 
   constructor(component: Component) {
     this._component = component;
@@ -31,6 +36,12 @@ export class Field<Component extends BaseComponent> {
   ) => {
     return Object.assign(this, { _defaultProps: defaultProps });
   };
+
+  errorProps = <ErrorProps extends ErrorPropsBuilder<Component>>(
+    errorProps: ErrorProps,
+  ) => {
+    return Object.assign(this, { _errorProps: errorProps });
+  };
 }
 
 export class Form<Fields extends Record<string, any>> {
@@ -45,6 +56,11 @@ export const hasDefaultProps = (
   field: any,
 ): field is RequireProperty<Field<BaseComponent>, '_defaultProps'> =>
   !!field._defaultProps;
+
+export const hasErrorProps = (
+  field: any,
+): field is RequireProperty<Field<BaseComponent>, '_errorProps'> =>
+  !!field._errorProps;
 
 export const hasValueProp = (
   field: any,

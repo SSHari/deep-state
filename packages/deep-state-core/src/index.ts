@@ -11,6 +11,7 @@ import type {
   BaseConfigs,
   BaseConfigsWithBuiltDependencies,
   Data,
+  Dependency,
   Graph,
   RecursivePartial,
   Subscribers,
@@ -201,11 +202,7 @@ export function configureStore<Collection extends DataCollection>() {
           },
         >(
           build: Build,
-        ) => Array<{
-          keys: Array<keyof GraphTypes>;
-          cond?: (data: any) => boolean;
-          effects: Record<string, any> | ((data: any) => Record<string, any>);
-        }>;
+        ) => Array<Dependency>;
       };
     };
   }) {
@@ -222,6 +219,7 @@ export * from './utils';
 export type {
   BaseConfigs,
   Data,
+  Dependency,
   Graph,
   RecursivePartial,
   Store,

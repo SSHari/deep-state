@@ -16,9 +16,11 @@ import {
   mapObj,
   merge,
   noop,
+  walkObj,
 } from 'deep-state-core';
 import type {
   BaseConfigs,
+  Dependency,
   RecursivePartial,
   Store,
   StoreSnapshot,
@@ -28,13 +30,18 @@ import {
   Field,
   Form,
   hasDefaultProps,
+  hasErrorProps,
   hasValueProp,
   type InferForm,
 } from './builder';
-import type {
-  BaseComponent,
-  RemoveDefaultPropsFromRequired,
-  RequireProperty,
+import {
+  useStableCallback,
+  useCancelableCallback,
+  DS_CALLBACK_ABORTED,
+  type BaseComponent,
+  type RemoveDefaultPropsFromRequired,
+  type RequireProperty,
+  type MaybePromise,
 } from './utils';
 
 type BaseFields = {
@@ -47,6 +54,35 @@ type DeepStateContextValue<Fields extends BaseFields> = {
   store: Store<Fields>;
   config: { keyToTypeMap: Record<string, string> };
 };
+
+type FormMetaData<Keys extends Array<any>> =
+  | { isValid: true }
+  | { isValid: false; errors: Record<Keys[number], string> };
+
+type FormDependencyMetaData<DependencyKeys extends Array<any>> = {
+  [DependencyKey in DependencyKeys[number] as DependencyKey extends '_meta'
+    ? DependencyKey
+    : never]: FormMetaData<DependencyKeys>;
+};
+
+type FormFieldPropCollection<
+  FormFieldTypes extends Record<string, any>,
+  GraphTypes extends Record<string, any>,
+  DependencyKeys extends Array<any>,
+> = {
+  [DependencyKey in DependencyKeys[number] as DependencyKey extends keyof GraphTypes
+    ? DependencyKey
+    : never]: DependencyKey extends keyof GraphTypes
+    ? FormFieldTypes[GraphTypes[DependencyKey]]['props']
+    : never;
+};
+
+type DependencyData<
+  FormFieldTypes extends Record<string, any>,
+  GraphTypes extends Record<string, any>,
+  DependencyKeys extends Array<any>,
+> = FormDependencyMetaData<DependencyKeys> &
+  FormFieldPropCollection<FormFieldTypes, GraphTypes, DependencyKeys>;
 
 type DeepStateFormProviderProps<
   FormFieldTypes extends InferForm<Form<any>> = InferForm<Form<any>>,
@@ -98,46 +134,60 @@ type DeepStateFormProviderProps<
       [GraphKey in keyof GraphTypes]: FormFieldTypes[GraphTypes[GraphKey]]['props'];
     },
   ) => void;
+  validate?: (
+    values: {
+      [GraphKey in keyof GraphTypes as FormFieldTypes[GraphTypes[GraphKey]] extends {
+        valueProp: any;
+      }
+        ? GraphKey
+        : never]: FormFieldTypes[GraphTypes[GraphKey]]['props'][FormFieldTypes[GraphTypes[GraphKey]]['valueProp']];
+    },
+    props: {
+      [GraphKey in keyof GraphTypes]: FormFieldTypes[GraphTypes[GraphKey]]['props'];
+    },
+  ) => MaybePromise<
+    | { isValid: true }
+    | {
+        isValid: false;
+        errors: {
+          [GraphKey in keyof GraphTypes as FormFieldTypes[GraphTypes[GraphKey]] extends {
+            valueProp: any;
+          }
+            ? GraphKey
+            : never]?: string;
+        };
+      }
+  >;
   fields: {
     [GraphKey in keyof GraphTypes]: {
       type: GraphTypes[GraphKey];
       props?: RemoveDefaultPropsFromRequired<
-        ComponentProps<FormFieldTypes[GraphTypes[GraphKey]]['component']>,
+        FormFieldTypes[GraphTypes[GraphKey]]['props'],
         FormFieldTypes[GraphTypes[GraphKey]]['defaultProps']
       >;
       dependencies?: <
         Build extends <
-          DependencyKeys extends Array<keyof GraphTypes>,
+          DependencyKeys extends Array<keyof GraphTypes | '_meta'>,
         >(dependency: {
           keys: DependencyKeys;
-          cond?: (props: {
-            [DependencyKey in DependencyKeys[number]]: ComponentProps<
-              FormFieldTypes[GraphTypes[DependencyKey]]['component']
-            >;
-          }) => boolean;
+          cond?: (
+            data: DependencyData<FormFieldTypes, GraphTypes, DependencyKeys>,
+          ) => boolean;
           effects:
-            | RecursivePartial<
-                ComponentProps<
-                  FormFieldTypes[GraphTypes[GraphKey]]['component']
-                >
-              >
-            | ((props: {
-                [DependencyKey in DependencyKeys[number]]: ComponentProps<
-                  FormFieldTypes[GraphTypes[DependencyKey]]['component']
-                >;
-              }) => RecursivePartial<
-                ComponentProps<
-                  FormFieldTypes[GraphTypes[GraphKey]]['component']
-                >
+            | RecursivePartial<FormFieldTypes[GraphTypes[GraphKey]]['props']>
+            | ((
+                data: DependencyData<
+                  FormFieldTypes,
+                  GraphTypes,
+                  DependencyKeys
+                >,
+              ) => RecursivePartial<
+                FormFieldTypes[GraphTypes[GraphKey]]['props']
               >);
         }) => typeof dependency,
       >(
         build: Build,
-      ) => Array<{
-        keys: Array<keyof GraphTypes>;
-        cond?: (data: any) => boolean;
-        effects: Record<string, any> | ((data: any) => Record<string, any>);
-      }>;
+      ) => Array<Dependency>;
     };
   };
 };
@@ -206,8 +256,12 @@ export const Builder = {
         >['fields']
       >,
     ) {
+      if ('_meta' in props.fields) {
+        throw new Error('The _meta key is reserved. Use a different name');
+      }
+
       const updateRef =
-        useRef<(key: string, updater: Updater<any>) => void>(noop);
+        useRef<(key: string | '_meta', updater: Updater<any>) => void>(noop);
 
       const [contextValue] = useState(() => {
         const keys = mapObj(
@@ -225,15 +279,44 @@ export const Builder = {
                   : fieldConfig._defaultProps;
             }
 
+            let dependencies: NonNullable<typeof field.dependencies> =
+              field.dependencies ?? (() => []);
+
+            if (hasErrorProps(fieldConfig)) {
+              const errorDependency: Dependency = {
+                keys: ['_meta'],
+                cond: (data) =>
+                  !data._meta.isValid && !!data._meta.errors[fieldKey],
+                effects: (data) =>
+                  fieldConfig._errorProps({
+                    error: data._meta.errors[fieldKey],
+                  }),
+              };
+
+              const definedDependencies = dependencies;
+              dependencies = (build) => [
+                ...definedDependencies(build),
+                build(errorDependency),
+              ];
+            }
+
             return {
               type: field.type,
-              data: merge({}, defaultProps, field.props),
-              dependencies: field.dependencies,
+              data: merge(defaultProps, field.props),
+              dependencies,
             };
           },
         );
 
-        const store = createStore({ keys });
+        const store = createStore({
+          keys: {
+            ...keys,
+            _meta: {
+              type: '__meta__',
+              data: { isValid: true },
+            } as typeof keys[string],
+          } as typeof keys,
+        });
         const keyToTypeMap = mapObj(props.fields, ({ type }) => type);
 
         updateRef.current = store.update;
@@ -257,29 +340,55 @@ export const Builder = {
         )._valueProp;
       });
 
-      const onChangeRef = useRef(
-        buildOnChangeWrapper({
-          initialData: contextValue.store.getSnapshot(),
-          valueProps,
-        }),
-      );
+      const lastStoreDataRef = useRef(contextValue.store.getSnapshot());
+      const stableOnChange = useStableCallback(props.onChange) as NonNullable<
+        DeepStateFormProviderProps['onChange']
+      >;
 
-      useEffect(
-        () =>
-          onChangeRef.current.updateOnChange(
-            props.onChange as DeepStateFormProviderProps['onChange'],
-          ),
-        [props.onChange],
-      );
+      const cancelableValidate = useCancelableCallback(
+        props.validate,
+      ) as NonNullable<DeepStateFormProviderProps['validate']>;
 
       useEffect(() => {
-        // Don't subscribe to changes if there's no handler
-        if (!onChangeRef.current.isSet) return;
+        return contextValue.store.subscribe(async () => {
+          const data: StoreSnapshot<BaseConfigs> =
+            contextValue.store.getSnapshot();
 
-        return contextValue.store.subscribe(() => {
-          onChangeRef.current.onChange(contextValue.store.getSnapshot());
+          const changedKeys: Array<string> = [];
+
+          walkObj(data, (value, key) => {
+            if (lastStoreDataRef.current[key] !== value) {
+              changedKeys.push(key);
+            }
+          });
+
+          lastStoreDataRef.current = data;
+
+          const values = mapObj(valueProps, (valueProp, fieldKey) => {
+            return data[fieldKey]?.[valueProp as string];
+          });
+
+          stableOnChange(values, data, changedKeys);
+
+          // Skip validation for changes triggered
+          // by a previous validation run
+          if (!changedKeys.includes('_meta')) {
+            try {
+              const validation = await cancelableValidate(values, data);
+
+              // Skip for a no-op
+              if (!validation) return;
+
+              contextValue.store.update('_meta', validation);
+            } catch (error) {
+              if (error === DS_CALLBACK_ABORTED) return;
+
+              // TODO: Handle errors properly
+              console.error(error);
+            }
+          }
         });
-      }, [contextValue.store]);
+      }, [contextValue.store, stableOnChange, cancelableValidate]);
 
       useImperativeHandle(
         ref,
@@ -347,44 +456,6 @@ export const Builder = {
   field: <Component extends BaseComponent>(component: Component) =>
     new Field(component),
 };
-
-type BuildOnChangeWrapperOptions = {
-  initialData: StoreSnapshot<BaseConfigs>;
-  valueProps: Record<string, any>;
-};
-
-function buildOnChangeWrapper({
-  initialData,
-  valueProps,
-}: BuildOnChangeWrapperOptions) {
-  let onChange: DeepStateFormProviderProps['onChange'];
-  let lastData = initialData;
-  let isSet = !!onChange;
-
-  return {
-    onChange(data: StoreSnapshot<BaseConfigs>) {
-      const changedKeys = [];
-      for (const [key, value] of Object.entries(data)) {
-        if (lastData[key] !== value) changedKeys.push(key);
-      }
-
-      lastData = data;
-
-      const values = mapObj(valueProps, (valueProp, fieldKey) => {
-        return (data[fieldKey] as any)?.[valueProp];
-      });
-
-      onChange?.(values, data, changedKeys);
-    },
-    updateOnChange(newOnChange: DeepStateFormProviderProps['onChange']) {
-      onChange = newOnChange;
-      isSet = !!onChange;
-    },
-    get isSet() {
-      return isSet;
-    },
-  };
-}
 
 type UseDeepStateStoreOptions<Fields extends BaseFields> = {
   selector: (snapshot: StoreSnapshot<Fields>) => any;
