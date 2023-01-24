@@ -65,19 +65,39 @@ const props = buildProps({
   onChange: console.log,
   onSubmit: console.log,
   fields: {
+    randomizer: {
+      type: 'button',
+      props: {
+        type: 'button',
+        children: '[RESET] Randomize Data',
+      },
+    },
+    reset: {
+      type: 'button',
+      props: {
+        type: 'button',
+        children: '[RESET] Reset Data',
+      },
+    },
     fieldA: {
       type: 'text',
-      props: { name: '' },
-      dependencies: (build) => [build({ keys: ['fieldA'], effects: {} })],
-    },
-    fieldB: {
-      type: 'number',
-      props: { max: 2 },
+      props: { value: 'Reset Text' },
       dependencies: (build) => [
         build({
-          keys: ['fieldA', 'fieldB', '_meta'],
-          cond: (props) => props.fieldA.name === '' || !!props._meta.isValid,
-          effects: (props) => ({ max: props.fieldA.max }),
+          keys: ['fieldB'],
+          cond: (data) => parseInt(data.fieldB.value as string) === 100,
+          effects: { value: 'Hi', disabled: true },
+        }),
+      ],
+    },
+    fieldB: { type: 'number', props: { value: 800, type: 'number' } },
+    fieldC: {
+      type: 'button',
+      props: { children: 'Reset Button' },
+      dependencies: (build) => [
+        build({
+          keys: ['_meta'],
+          effects: (data) => ({ disabled: !data._meta.isValid }),
         }),
       ],
     },
@@ -102,6 +122,28 @@ function App() {
         return { isValid: false, errors };
       }}
       fields={{
+        reset: {
+          type: 'button',
+          props: {
+            type: 'button',
+            children: 'Reset Data',
+            onClick: () => {
+              formRef.current?.reset(props.fields);
+            },
+          },
+        },
+        randomizer: {
+          type: 'button',
+          props: {
+            children: 'Randomize Field A Value',
+            type: 'button',
+            onClick: () => {
+              formRef.current?.merge('fieldA', {
+                value: Math.floor(Math.random() * 100),
+              });
+            },
+          },
+        },
         fieldA: {
           type: 'text',
           props: { value: 'Text' },
@@ -128,6 +170,8 @@ function App() {
     >
       {({ Field }) => (
         <>
+          <Field field="randomizer" />
+          <Field field="reset" />
           <Field field="fieldA" />
           <Field field="fieldB" />
           <Field field="fieldC" />

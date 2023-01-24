@@ -99,7 +99,7 @@ type DeepStateFormProviderProps<
       'children' | 'onChange' | 'onSubmit'
     >;
   };
-  ref?: DeepStateFormProviderRef<DeepStateFormProviderProps['fields']>;
+  ref?: React.ForwardedRef<DeepStateFormProviderRefBase<any>>;
   children?: (config: {
     Field: React.FC<{ field: keyof GraphTypes }>;
   }) => React.ReactNode;
@@ -192,10 +192,22 @@ type DeepStateFormProviderProps<
   };
 };
 
-type DeepStateFormProviderRef<Fields extends BaseFields> = React.ForwardedRef<{
-  update: Store<Fields>['update'];
-  reset: Store<Fields>['reset'];
-}>;
+type DeepStateFormProviderRefBase<
+  Fields extends DeepStateFormProviderProps['fields'],
+> = {
+  update: <Key extends keyof Fields>(
+    key: Key,
+    props: Updater<NonNullable<Fields[Key]['props']>>,
+  ) => void;
+  merge: <Key extends keyof Fields>(
+    key: Key,
+    props: NonNullable<Fields[Key]['props']>,
+  ) => void;
+  reset: (
+    configs: Fields,
+    options?: { data?: boolean; dependencies?: boolean },
+  ) => void;
+};
 
 const DeepStateContext =
   createContext<DeepStateContextValue<BaseFields> | null>(null);
@@ -248,13 +260,7 @@ export const Builder = {
         GraphTypes,
         FormComponentOverride
       >,
-      ref: DeepStateFormProviderRef<
-        DeepStateFormProviderProps<
-          FormFieldTypes,
-          GraphTypes,
-          FormComponentOverride
-        >['fields']
-      >,
+      ref: React.ForwardedRef<DeepStateFormProviderRefBase<any>>,
     ) {
       if ('_meta' in props.fields) {
         throw new Error('The _meta key is reserved. Use a different name');
@@ -324,7 +330,7 @@ export const Builder = {
         return {
           store,
           config: { keyToTypeMap },
-        } as DeepStateContextValue<BaseFields>;
+        } as DeepStateContextValue<BaseConfigs>;
       });
 
       const fieldsWithValues = filterObj(props.fields, ({ type }) =>
@@ -393,8 +399,26 @@ export const Builder = {
       useImperativeHandle(
         ref,
         () => ({
-          reset: contextValue.store.reset,
-          update: contextValue.store.update,
+          reset: (configs, options) => {
+            const fields = mapObj(
+              configs,
+              ({ props, dependencies }: Record<string, any>) => ({
+                data: props,
+                dependencies,
+              }),
+            );
+
+            contextValue.store.reset(
+              { ...fields, _meta: { data: { isValid: true } } },
+              options,
+            );
+          },
+          update: (key, data) => contextValue.store.update(key as string, data),
+          merge: (key, data) =>
+            contextValue.store.update(
+              key as string,
+              (prev: Record<string, any>) => ({ ...prev, ...data }),
+            ),
         }),
         [contextValue.store.reset, contextValue.store.update],
       );
@@ -439,11 +463,8 @@ export const Builder = {
     }
 
     function useDeepStateFormProviderRef<
-      Fields extends BaseFields,
-    >(): React.MutableRefObject<{
-      update: Store<Fields>['update'];
-      reset: Store<Fields>['reset'];
-    } | null> {
+      Fields extends DeepStateFormProviderProps['fields'],
+    >(): React.MutableRefObject<DeepStateFormProviderRefBase<Fields> | null> {
       return useRef(null);
     }
 

@@ -32,8 +32,8 @@ function buildGraphNode(
 ): Graph[string] {
   let currentDependencies = config.dependencies ?? [];
   let currentData = config.data ?? {};
-  let prevMergedData: Data;
-  let mergedData: Data;
+  let prevMergedData: Data | undefined;
+  let mergedData: Data | undefined;
 
   return {
     get data() {
@@ -81,8 +81,8 @@ function buildGraphNode(
     },
     resetData: (data) => {
       currentData = data ?? {};
-      prevMergedData = {};
-      mergedData = {};
+      prevMergedData = undefined;
+      mergedData = undefined;
     },
     resetDependencies: (dependencies) => {
       currentDependencies = dependencies ?? [];
