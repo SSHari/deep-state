@@ -8,7 +8,7 @@
   "prettier": "prettier-config-custom",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "_build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest",
     "format": "prettier --write .",

@@ -320,7 +320,7 @@ export const Builder = {
             _meta: {
               type: '__meta__',
               data: { isValid: true },
-            } as typeof keys[string],
+            } as (typeof keys)[string],
           } as typeof keys,
         });
         const keyToTypeMap = mapObj(props.fields, ({ type }) => type);
