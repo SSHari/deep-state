@@ -1,12 +1,24 @@
 {
-  "name": "deep-state-react",
-  "private": true,
+  "name": "@deep-state/react-form",
+  "private": false,
   "version": "0.0.0",
   "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/react-form.umd.cjs",
+  "module": "./dist/react-form.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/react-form.js",
+      "require": "./dist/react-form.umd.cjs"
+    }
+  },
   "prettier": "prettier-config-custom",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build && tsc -p tsconfig.build.json",
     "preview": "vite preview",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -14,6 +26,10 @@
   },
   "dependencies": {
     "deep-state-core": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@types/react": "^18.0.24",
