@@ -13,10 +13,11 @@ export default defineConfig({
       name: 'DeepStateReact',
     },
     rollupOptions: {
-      external: ['react'],
+      external: ['react', '@deep-state/core'],
       output: {
         globals: {
           react: 'React',
+          '@deep-state/core': 'DeepState',
         },
       },
     },

@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { type InferDeepStateFromProps, Builder } from '../src/index';
 import './index.css';
-import { mapObj } from 'deep-state-core';
+import { mapObj } from '@deep-state/core';
 
 function TextField({
   error,

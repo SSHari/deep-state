@@ -25,7 +25,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "deep-state-core": "workspace:*"
+    "@deep-state/core": "0.0.0"
   },
   "peerDependencies": {
     "react": "^18.2.0",

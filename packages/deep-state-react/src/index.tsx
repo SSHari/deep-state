@@ -17,7 +17,7 @@ import {
   merge,
   noop,
   walkObj,
-} from 'deep-state-core';
+} from '@deep-state/core';
 import type {
   BaseConfigs,
   Dependency,
@@ -25,7 +25,7 @@ import type {
   Store,
   StoreSnapshot,
   Updater,
-} from 'deep-state-core';
+} from '@deep-state/core';
 import {
   Field,
   Form,
