@@ -1,14 +1,24 @@
 {
-  "name": "deep-state-core",
-  "private": true,
+  "name": "@deep-state/core",
+  "private": false,
   "version": "0.0.0",
   "type": "module",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/core.umd.cjs",
+  "module": "./dist/core.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/core.js",
+      "require": "./dist/core.umd.cjs"
+    }
+  },
   "prettier": "prettier-config-custom",
   "scripts": {
-    "dev": "vite",
-    "_build": "tsc && vite build",
+    "dev": "concurrently \"vite build --watch --emptyOutDir=false\" \"tsc -p tsconfig.build.json --watch\"",
+    "build": "vite build && tsc -p tsconfig.build.json",
     "preview": "vite preview",
     "test": "vitest",
     "format": "prettier --write .",
@@ -16,6 +26,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "concurrently": "^7.6.0",
     "eslint": "^7.32.0",
     "eslint-config-custom": "workspace:*",
     "prettier": "^2.8.0",
