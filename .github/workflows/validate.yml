@@ -1,15 +1,12 @@
-name: Release
+name: Validate
 
 on:
-  push:
-    branches:
-      - main
-
-concurrency: ${{ github.workflow }}-${{ github.ref }}
+  pull_request:
+    types: [opened, reopened, edited, synchronize]
 
 jobs:
-  release:
-    name: Release
+  validate:
+    name: Validate
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -50,12 +47,3 @@ jobs:
           pnpm build
           pnpm typecheck
           pnpm test
-
-      - name: Publish to npm
-        id: changesets
-        uses: changesets/action@v1
-        with:
-          publish: pnpm publish-packages
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
