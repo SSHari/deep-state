@@ -133,7 +133,7 @@ type DeepStateFormProviderProps<
     props: {
       [GraphKey in keyof GraphTypes]: FormFieldTypes[GraphTypes[GraphKey]]['props'];
     },
-  ) => void;
+  ) => MaybePromise<void>;
   validate?: (
     values: {
       [GraphKey in keyof GraphTypes as FormFieldTypes[GraphTypes[GraphKey]] extends {
@@ -279,8 +279,13 @@ export const Builder = {
             if (hasDefaultProps(fieldConfig)) {
               defaultProps =
                 typeof fieldConfig._defaultProps === 'function'
-                  ? fieldConfig._defaultProps((updater) => {
-                      return updateRef.current(fieldKey, updater);
+                  ? fieldConfig._defaultProps({
+                      update: (updater) => updateRef.current(fieldKey, updater),
+                      merge: (update: any) =>
+                        updateRef.current(fieldKey, (prev: any) => ({
+                          ...prev,
+                          ...update,
+                        })),
                     })
                   : fieldConfig._defaultProps;
             }
@@ -430,7 +435,7 @@ export const Builder = {
         <DeepStateContext.Provider value={contextValue}>
           <FormWrapper
             {...props.form?.props}
-            onSubmit={(event) => {
+            onSubmit={async (event) => {
               event.preventDefault();
               const formState = contextValue.store.getSnapshot();
 
@@ -438,7 +443,9 @@ export const Builder = {
                 return (formState[fieldKey] as any)?.[valueProp];
               });
 
-              props.onSubmit?.(values as any, formState as any);
+              if (props.onSubmit) {
+                await props.onSubmit(values as any, formState as any);
+              }
             }}
           >
             {props.children?.({
