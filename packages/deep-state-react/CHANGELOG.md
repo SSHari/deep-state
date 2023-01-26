@@ -1,5 +1,11 @@
 # @deep-state/react-form
 
+## 0.0.4
+
+### Patch Changes
+
+- [#9](https://github.com/SSHari/deep-state/pull/9) [`1d17d94`](https://github.com/SSHari/deep-state/commit/1d17d947c09ced11fa39efbf571f9874c68e6694) Thanks [@SSHari](https://github.com/SSHari)! - fix default props merge util type
+
 ## 0.0.3
 
 ### Patch Changes
