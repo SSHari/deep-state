@@ -14,7 +14,7 @@
     "format:check": "prettier --check \"*.{js,json}\" && turbo run format:check",
     "test": "turbo test -- --run",
     "typecheck": "turbo typecheck",
-    "publish-packages": "CI=1 turbo run build format:check typecheck test && changeset version && changeset publish"
+    "publish-packages": "turbo run build && changeset version && changeset publish"
   },
   "devDependencies": {
     "@changesets/changelog-github": "^0.4.8",

@@ -44,6 +44,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Validate Packages
+        run: |
+          pnpm format:check
+          pnpm typecheck
+          pnpm test
+
       - name: Publish to npm
         id: changesets
         uses: changesets/action@v1
