@@ -13,10 +13,31 @@ importers:
     devDependencies:
       '@changesets/changelog-github': 0.4.8
       '@changesets/cli': 2.26.0
-      eslint-config-custom: link:packages/eslint-config-custom
+      eslint-config-custom: link:configs/eslint-config-custom
       prettier: 2.8.3
-      prettier-config-custom: link:packages/prettier-config-custom
+      prettier-config-custom: link:configs/prettier-config-custom
       turbo: 1.7.0
+
+  configs/eslint-config-custom:
+    specifiers:
+      eslint: ^7.23.0
+      eslint-config-prettier: ^8.3.0
+      eslint-config-turbo: latest
+      eslint-plugin-react: 7.31.8
+      typescript: ^4.7.4
+    dependencies:
+      eslint: 7.32.0
+      eslint-config-prettier: 8.6.0_eslint@7.32.0
+      eslint-config-turbo: 0.0.7_eslint@7.32.0
+      eslint-plugin-react: 7.31.8_eslint@7.32.0
+    devDependencies:
+      typescript: 4.9.4
+
+  configs/prettier-config-custom:
+    specifiers: {}
+
+  configs/tsconfig:
+    specifiers: {}
 
   packages/deep-state-core:
     specifiers:
@@ -32,10 +53,10 @@ importers:
     devDependencies:
       concurrently: 7.6.0
       eslint: 7.32.0
-      eslint-config-custom: link:../eslint-config-custom
+      eslint-config-custom: link:../../configs/eslint-config-custom
       prettier: 2.8.3
-      prettier-config-custom: link:../prettier-config-custom
-      tsconfig: link:../tsconfig
+      prettier-config-custom: link:../../configs/prettier-config-custom
+      tsconfig: link:../../configs/tsconfig
       typescript: 4.9.4
       vite: 3.2.5
       vitest: 0.25.8
@@ -62,35 +83,14 @@ importers:
       '@types/react-dom': 18.0.10
       '@vitejs/plugin-react': 2.2.0_vite@3.2.5
       eslint: 8.32.0
-      eslint-config-custom: link:../eslint-config-custom
+      eslint-config-custom: link:../../configs/eslint-config-custom
       prettier: 2.8.3
-      prettier-config-custom: link:../prettier-config-custom
+      prettier-config-custom: link:../../configs/prettier-config-custom
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
       typescript: 4.9.4
       vite: 3.2.5
       vitest: 0.25.8
-
-  packages/eslint-config-custom:
-    specifiers:
-      eslint: ^7.23.0
-      eslint-config-prettier: ^8.3.0
-      eslint-config-turbo: latest
-      eslint-plugin-react: 7.31.8
-      typescript: ^4.7.4
-    dependencies:
-      eslint: 7.32.0
-      eslint-config-prettier: 8.6.0_eslint@7.32.0
-      eslint-config-turbo: 0.0.7_eslint@7.32.0
-      eslint-plugin-react: 7.31.8_eslint@7.32.0
-    devDependencies:
-      typescript: 4.9.4
-
-  packages/prettier-config-custom:
-    specifiers: {}
-
-  packages/tsconfig:
-    specifiers: {}
 
 packages:
 
