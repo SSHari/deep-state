@@ -41,16 +41,16 @@ const { Form, buildProps, useFormRef } = Builder.form({
   fields: {
     text: Builder.field(TextField)
       .valueProp('value')
-      .defaultProps(({ update }) => ({
+      .defaultProps(({ merge }) => ({
         requiredPropTest: '',
-        onChange: (event) =>
-          update((prev) => ({ ...prev, value: event.target.value })),
+        onChange: (event) => merge({ value: event.target.value }),
       }))
       .errorProps(({ error }) => ({ error: true, helperText: error })),
     number: Builder.field(NumberField)
       .valueProp('value')
-      .defaultProps(({ merge }) => ({
-        onChange: (event) => merge({ value: event.target.value }),
+      .defaultProps(({ update }) => ({
+        onChange: (event) =>
+          update((prev) => ({ ...prev, value: event.target.value })),
       })),
     button: Builder.field(
       (props: React.ButtonHTMLAttributes<HTMLButtonElement>) => (

@@ -11,7 +11,7 @@ type DefaultPropsBuilder<
   | RecursivePartial<Props>
   | ((utils: {
       update: WithUpdater<Props>;
-      merge: (updatedProps: Props) => void;
+      merge: (updatedProps: RecursivePartial<Props>) => void;
     }) => RecursivePartial<Props>);
 
 type ErrorPropsBuilder<Component extends BaseComponent> = (fieldMeta: {
