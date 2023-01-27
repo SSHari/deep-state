@@ -1,5 +1,11 @@
 # @deep-state/react-form
 
+## 0.0.5
+
+### Patch Changes
+
+- [#13](https://github.com/SSHari/deep-state/pull/13) [`3188edb`](https://github.com/SSHari/deep-state/commit/3188edba68873b2d5f7b6655469bad8b2bedcbee) Thanks [@SSHari](https://github.com/SSHari)! - add a validateOnSubmit and validateOnChange option
+
 ## 0.0.4
 
 ### Patch Changes
