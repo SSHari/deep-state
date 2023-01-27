@@ -111,6 +111,8 @@ function App() {
       onChange={(values, props, changedKeys) => {
         console.log(values, props, changedKeys);
       }}
+      validateOnSubmit
+      validateOnChange
       onSubmit={console.log}
       ref={formRef}
       validate={async (values) => {
