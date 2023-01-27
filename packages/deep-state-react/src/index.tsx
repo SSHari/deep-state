@@ -130,6 +130,18 @@ type DeepStateFormProviderProps<
         ? GraphKey
         : never]: FormFieldTypes[GraphTypes[GraphKey]]['props'][FormFieldTypes[GraphTypes[GraphKey]]['valueProp']];
     },
+    meta:
+      | { isValid: true }
+      | {
+          isValid: false;
+          errors: {
+            [GraphKey in keyof GraphTypes as FormFieldTypes[GraphTypes[GraphKey]] extends {
+              valueProp: any;
+            }
+              ? GraphKey
+              : never]?: string;
+          };
+        },
     props: {
       [GraphKey in keyof GraphTypes]: FormFieldTypes[GraphTypes[GraphKey]]['props'];
     },
@@ -158,6 +170,8 @@ type DeepStateFormProviderProps<
         };
       }
   >;
+  validateOnChange?: boolean;
+  validateOnSubmit?: boolean;
   fields: {
     [GraphKey in keyof GraphTypes]: {
       type: GraphTypes[GraphKey];
@@ -255,7 +269,11 @@ export const Builder = {
       GraphTypes extends Record<keyof GraphTypes, keyof FormFieldTypes>,
       FormComponentOverride extends BaseComponent = FormComponent,
     >(
-      props: DeepStateFormProviderProps<
+      {
+        validateOnChange = false,
+        validateOnSubmit = true,
+        ...props
+      }: DeepStateFormProviderProps<
         FormFieldTypes,
         GraphTypes,
         FormComponentOverride
@@ -383,7 +401,7 @@ export const Builder = {
 
           // Skip validation for changes triggered
           // by a previous validation run
-          if (!changedKeys.includes('_meta')) {
+          if (!changedKeys.includes('_meta') && !!validateOnChange) {
             try {
               const validation = await cancelableValidate(values, data);
 
@@ -444,7 +462,32 @@ export const Builder = {
               });
 
               if (props.onSubmit) {
-                await props.onSubmit(values as any, formState as any);
+                let meta = formState._meta;
+                if (!!validateOnSubmit) {
+                  try {
+                    const validation = await cancelableValidate(
+                      values,
+                      formState,
+                    );
+
+                    // Skip for a no-op
+                    if (validation) {
+                      contextValue.store.update('_meta', validation);
+                      meta = validation;
+                    }
+                  } catch (error) {
+                    if (error === DS_CALLBACK_ABORTED) return;
+
+                    // TODO: Handle errors properly
+                    console.error(error);
+                  }
+                }
+
+                await props.onSubmit(
+                  values as any,
+                  meta ?? ({ isValid: true } as any),
+                  formState as any,
+                );
               }
             }}
           >
