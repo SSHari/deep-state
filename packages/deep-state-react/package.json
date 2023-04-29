@@ -20,6 +20,7 @@
     "dev": "vite",
     "build": "vite build && tsc -p tsconfig.build.json",
     "preview": "vite preview",
+    "test": "vitest",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit"
@@ -32,11 +33,16 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^5.16.5",
+    "@testing-library/react": "^14.0.0",
+    "@testing-library/user-event": "^14.4.3",
     "@types/react": "^18.0.24",
     "@types/react-dom": "^18.0.8",
+    "@types/testing-library__jest-dom": "^5.14.5",
     "@vitejs/plugin-react": "^2.2.0",
     "eslint": "^8.28.0",
     "eslint-config-custom": "workspace:*",
+    "jsdom": "^21.1.1",
     "prettier": "^2.8.0",
     "prettier-config-custom": "workspace:*",
     "react": "^18.2.0",

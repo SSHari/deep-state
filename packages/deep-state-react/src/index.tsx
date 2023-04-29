@@ -1,14 +1,9 @@
 import {
-  createContext,
   forwardRef,
-  useContext,
-  useDebugValue,
   useEffect,
   useImperativeHandle,
   useRef,
   useState,
-  useSyncExternalStore,
-  type ComponentProps,
 } from 'react';
 import {
   configureStore,
@@ -21,8 +16,6 @@ import {
 import type {
   BaseConfigs,
   Dependency,
-  RecursivePartial,
-  Store,
   StoreSnapshot,
   Updater,
 } from '@deep-state/core';
@@ -34,197 +27,21 @@ import {
   hasValueProp,
   type InferForm,
 } from './builder';
+import { buildComponents } from './components';
+import { DeepStateContext } from './context';
+import type {
+  BaseComponent,
+  BaseFields,
+  DeepStateContextValue,
+  DeepStateFormProviderProps,
+  DeepStateFormProviderRefBase,
+  RequireProperty,
+} from './types';
 import {
   useStableCallback,
   useCancelableCallback,
   DS_CALLBACK_ABORTED,
-  type BaseComponent,
-  type RemoveDefaultPropsFromRequired,
-  type RequireProperty,
-  type MaybePromise,
 } from './utils';
-
-type BaseFields = {
-  [Key: string]: Omit<BaseConfigs[string], 'data'> & {
-    props?: BaseConfigs[string]['data'];
-  };
-};
-
-type DeepStateContextValue<Fields extends BaseFields> = {
-  store: Store<Fields>;
-  config: { keyToTypeMap: Record<string, string> };
-};
-
-type FormMetaData<Keys extends Array<any>> =
-  | { isValid: true }
-  | { isValid: false; errors: Record<Keys[number], string> };
-
-type FormDependencyMetaData<DependencyKeys extends Array<any>> = {
-  [DependencyKey in DependencyKeys[number] as DependencyKey extends '_meta'
-    ? DependencyKey
-    : never]: FormMetaData<DependencyKeys>;
-};
-
-type FormFieldPropCollection<
-  FormFieldTypes extends Record<string, any>,
-  GraphTypes extends Record<string, any>,
-  DependencyKeys extends Array<any>,
-> = {
-  [DependencyKey in DependencyKeys[number] as DependencyKey extends keyof GraphTypes
-    ? DependencyKey
-    : never]: DependencyKey extends keyof GraphTypes
-    ? FormFieldTypes[GraphTypes[DependencyKey]]['props']
-    : never;
-};
-
-type DependencyData<
-  FormFieldTypes extends Record<string, any>,
-  GraphTypes extends Record<string, any>,
-  DependencyKeys extends Array<any>,
-> = FormDependencyMetaData<DependencyKeys> &
-  FormFieldPropCollection<FormFieldTypes, GraphTypes, DependencyKeys>;
-
-type DeepStateFormProviderProps<
-  FormFieldTypes extends InferForm<Form<any>> = InferForm<Form<any>>,
-  GraphTypes extends Record<keyof GraphTypes, keyof FormFieldTypes> = Record<
-    string,
-    keyof FormFieldTypes
-  >,
-  FormComponent extends BaseComponent = typeof DefaultFormWrapper,
-> = {
-  form?: {
-    wrapper?: FormComponent;
-    props?: Omit<
-      ComponentProps<FormComponent>,
-      'children' | 'onChange' | 'onSubmit'
-    >;
-  };
-  ref?: React.ForwardedRef<DeepStateFormProviderRefBase<any>>;
-  children?: (config: {
-    Field: React.FC<{ field: keyof GraphTypes }>;
-  }) => React.ReactNode;
-  onChange?: (
-    values: {
-      [GraphKey in keyof GraphTypes as FormFieldTypes[GraphTypes[GraphKey]] extends {
-        valueProp: any;
-      }
-        ? GraphKey
-        : never]: FormFieldTypes[GraphTypes[GraphKey]]['props'][FormFieldTypes[GraphTypes[GraphKey]]['valueProp']];
-    },
-    props: {
-      [GraphKey in keyof GraphTypes]: FormFieldTypes[GraphTypes[GraphKey]]['props'];
-    },
-    changedKeys: (keyof {
-      [GraphKey in keyof GraphTypes as FormFieldTypes[GraphTypes[GraphKey]] extends {
-        valueProp: any;
-      }
-        ? GraphKey
-        : never]: void;
-    })[],
-  ) => void;
-  onSubmit?: (
-    values: {
-      [GraphKey in keyof GraphTypes as FormFieldTypes[GraphTypes[GraphKey]] extends {
-        valueProp: any;
-      }
-        ? GraphKey
-        : never]: FormFieldTypes[GraphTypes[GraphKey]]['props'][FormFieldTypes[GraphTypes[GraphKey]]['valueProp']];
-    },
-    meta:
-      | { isValid: true }
-      | {
-          isValid: false;
-          errors: {
-            [GraphKey in keyof GraphTypes as FormFieldTypes[GraphTypes[GraphKey]] extends {
-              valueProp: any;
-            }
-              ? GraphKey
-              : never]?: string;
-          };
-        },
-    props: {
-      [GraphKey in keyof GraphTypes]: FormFieldTypes[GraphTypes[GraphKey]]['props'];
-    },
-  ) => MaybePromise<void>;
-  validate?: (
-    values: {
-      [GraphKey in keyof GraphTypes as FormFieldTypes[GraphTypes[GraphKey]] extends {
-        valueProp: any;
-      }
-        ? GraphKey
-        : never]: FormFieldTypes[GraphTypes[GraphKey]]['props'][FormFieldTypes[GraphTypes[GraphKey]]['valueProp']];
-    },
-    props: {
-      [GraphKey in keyof GraphTypes]: FormFieldTypes[GraphTypes[GraphKey]]['props'];
-    },
-  ) => MaybePromise<
-    | { isValid: true }
-    | {
-        isValid: false;
-        errors: {
-          [GraphKey in keyof GraphTypes as FormFieldTypes[GraphTypes[GraphKey]] extends {
-            valueProp: any;
-          }
-            ? GraphKey
-            : never]?: string;
-        };
-      }
-  >;
-  validateOnChange?: boolean;
-  validateOnSubmit?: boolean;
-  fields: {
-    [GraphKey in keyof GraphTypes]: {
-      type: GraphTypes[GraphKey];
-      props?: RemoveDefaultPropsFromRequired<
-        FormFieldTypes[GraphTypes[GraphKey]]['props'],
-        FormFieldTypes[GraphTypes[GraphKey]]['defaultProps']
-      >;
-      dependencies?: <
-        Build extends <
-          DependencyKeys extends Array<keyof GraphTypes | '_meta'>,
-        >(dependency: {
-          keys: DependencyKeys;
-          cond?: (
-            data: DependencyData<FormFieldTypes, GraphTypes, DependencyKeys>,
-          ) => boolean;
-          effects:
-            | RecursivePartial<FormFieldTypes[GraphTypes[GraphKey]]['props']>
-            | ((
-                data: DependencyData<
-                  FormFieldTypes,
-                  GraphTypes,
-                  DependencyKeys
-                >,
-              ) => RecursivePartial<
-                FormFieldTypes[GraphTypes[GraphKey]]['props']
-              >);
-        }) => typeof dependency,
-      >(
-        build: Build,
-      ) => Array<Dependency>;
-    };
-  };
-};
-
-type DeepStateFormProviderRefBase<
-  Fields extends DeepStateFormProviderProps['fields'],
-> = {
-  update: <Key extends keyof Fields>(
-    key: Key,
-    props: Updater<NonNullable<Fields[Key]['props']>>,
-  ) => void;
-  merge: <Key extends keyof Fields>(
-    key: Key,
-    props: NonNullable<Fields[Key]['props']>,
-  ) => void;
-  reset: (
-    configs: Fields,
-    options?: { data?: boolean; dependencies?: boolean },
-  ) => void;
-};
-
-const DeepStateContext =
-  createContext<DeepStateContextValue<BaseFields> | null>(null);
 
 function DefaultFormWrapper(props: React.FormHTMLAttributes<HTMLFormElement>) {
   return <form {...props} />;
@@ -242,28 +59,7 @@ export const Builder = {
     type FormFieldTypes = InferForm<typeof formConfig>;
 
     const createStore = configureStore<Fields>();
-
-    function DeepStateField<FieldProps extends { field: string }>({
-      field,
-    }: FieldProps) {
-      const {
-        props,
-        config: { keyToTypeMap },
-      } = useDeepState({
-        selector: (state) => state[field],
-      });
-
-      const fieldType = keyToTypeMap[field];
-      if (!fieldType) {
-        throw new Error(
-          `Field key ${field} must be set in the <FormProvider> fields prop.`,
-        );
-      }
-
-      const Component = formConfig._fields[fieldType]._component;
-
-      return <Component {...props} />;
-    }
+    const components = buildComponents(formConfig);
 
     function DeepStateFormProvider<
       GraphTypes extends Record<keyof GraphTypes, keyof FormFieldTypes>,
@@ -491,9 +287,7 @@ export const Builder = {
               }
             }}
           >
-            {props.children?.({
-              Field: DeepStateField as React.FC<{ field: keyof GraphTypes }>,
-            })}
+            {props.children?.(components)}
           </FormWrapper>
         </DeepStateContext.Provider>
       );
@@ -528,44 +322,12 @@ export const Builder = {
     new Field(component),
 };
 
-type UseDeepStateStoreOptions<Fields extends BaseFields> = {
-  selector: (snapshot: StoreSnapshot<Fields>) => any;
-};
+export {
+  useDeepStateStore,
+  useDeepStateUpdate,
+  useDeepStateReset,
+  useDeepState,
+  useDeepStateSelector,
+} from './context';
 
-function useDeepStateStore<Fields extends BaseFields>() {
-  const context = useContext(DeepStateContext) as DeepStateContextValue<Fields>;
-
-  if (!context) {
-    throw new Error(
-      'Make sure useDeepStateStore is being used within a DeepStateProvider',
-    );
-  }
-
-  return context;
-}
-
-export function useDeepStateUpdate<Fields extends BaseFields>() {
-  const context = useDeepStateStore<Fields>();
-  useDebugValue(context.store.update);
-  return context.store.update;
-}
-
-export function useDeepStateReset<Fields extends BaseFields>() {
-  const context = useDeepStateStore<Fields>();
-  useDebugValue(context.store.reset);
-  return context.store.reset;
-}
-
-export function useDeepState<Fields extends BaseFields>({
-  selector = (state) => state,
-}: UseDeepStateStoreOptions<Fields>) {
-  const { store, config } = useDeepStateStore<Fields>();
-  const selectedValue = useSyncExternalStore(store.subscribe, () =>
-    selector(store.getSnapshot()),
-  );
-  useDebugValue(selectedValue);
-  return { props: selectedValue, config };
-}
-
-export type InferDeepStateFromProps<Props extends { fields: any }> =
-  Props['fields'];
+export type { InferDeepStateFromProps } from './types';
