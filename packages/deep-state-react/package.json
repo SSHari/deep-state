@@ -26,7 +26,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@deep-state/core": "0.0.1"
+    "@deep-state/core": "workspace:*"
   },
   "peerDependencies": {
     "react": "^18.2.0",
@@ -36,19 +36,19 @@
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.4.3",
-    "@types/react": "^18.0.24",
-    "@types/react-dom": "^18.0.8",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.1",
     "@types/testing-library__jest-dom": "^5.14.5",
-    "@vitejs/plugin-react": "^2.2.0",
-    "eslint": "^8.28.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "eslint": "^8.39.0",
     "eslint-config-custom": "workspace:*",
     "jsdom": "^21.1.1",
-    "prettier": "^2.8.0",
+    "prettier": "^2.8.8",
     "prettier-config-custom": "workspace:*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "typescript": "^4.6.4",
-    "vite": "^3.2.3",
-    "vitest": "^0.25.1"
+    "typescript": "^5.0.4",
+    "vite": "^4.3.3",
+    "vitest": "^0.30.1"
   }
 }
