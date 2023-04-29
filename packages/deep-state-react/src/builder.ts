@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react';
 import type { RecursivePartial, Updater } from '@deep-state/core';
-import type { BaseComponent, RequireProperty } from './utils';
+import type { BaseComponent, RequireProperty } from './types';
 
 type WithUpdater<T> = (updater: Updater<T>) => void;
 

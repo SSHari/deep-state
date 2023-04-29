@@ -169,13 +169,20 @@ function App() {
         },
       }}
     >
-      {({ Field }) => (
+      {({ Field, Show }) => (
         <>
           <Field field="randomizer" />
           <Field field="reset" />
           <Field field="fieldA" />
           <Field field="fieldB" />
-          <Field field="fieldC" />
+          <Show
+            keys={['fieldA', 'fieldB', '_meta']}
+            when={(data) => {
+              return data.fieldA.value === 'show' && data.fieldB.value == 300;
+            }}
+          >
+            <Field field="fieldC" />
+          </Show>
         </>
       )}
     </Form>
