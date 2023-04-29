@@ -1,5 +1,13 @@
 # @deep-state/react-form
 
+## 0.0.5
+
+### Patch Changes
+
+- [#15](https://github.com/SSHari/deep-state/pull/15) [`8b4d7ff`](https://github.com/SSHari/deep-state/commit/8b4d7ff98d83ba32ffb05aed08bef67bbacbd635) Thanks [@SSHari](https://github.com/SSHari)! - Add a Show component to conditionally render elements and reorganize the repo so code is more maintainable.
+
+- [#13](https://github.com/SSHari/deep-state/pull/13) [`3188edb`](https://github.com/SSHari/deep-state/commit/3188edba68873b2d5f7b6655469bad8b2bedcbee) Thanks [@SSHari](https://github.com/SSHari)! - add a validateOnSubmit and validateOnChange option
+
 ## 0.0.4
 
 ### Patch Changes
