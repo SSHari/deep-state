@@ -50,3 +50,4 @@ jobs:
           pnpm build
           pnpm typecheck
           pnpm test
+          pnpm test:types

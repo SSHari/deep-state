@@ -13,6 +13,7 @@
     "format": "prettier --write \"*.{js,json}\" && turbo run format",
     "format:check": "prettier --check \"*.{js,json}\" && turbo run format:check",
     "test": "turbo test -- --run",
+    "test:types": "turbo test:types -- --run",
     "typecheck": "turbo typecheck",
     "publish-packages": "turbo run build && changeset version && changeset publish"
   },
