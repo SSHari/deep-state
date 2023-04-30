@@ -27,7 +27,7 @@ import {
   hasValueProp,
   type InferForm,
 } from './builder';
-import { buildComponents } from './components';
+import { buildComponents, type DeepStateFieldComponent } from './components';
 import { DeepStateContext } from './context';
 import type {
   BaseComponent,
@@ -287,7 +287,13 @@ export const Builder = {
               }
             }}
           >
-            {props.children?.(components)}
+            {props.children?.({
+              Field: components.Field as DeepStateFieldComponent<
+                FormFieldTypes,
+                GraphTypes
+              >,
+              Show: components.Show,
+            })}
           </FormWrapper>
         </DeepStateContext.Provider>
       );

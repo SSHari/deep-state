@@ -8,8 +8,11 @@ export type DeepStateFieldComponent<
     string,
     keyof FormFieldTypes
   >,
-> = <FieldKeys extends keyof GraphTypes = keyof GraphTypes>(props: {
-  field: FieldKeys;
+> = <FieldKey extends keyof GraphTypes = keyof GraphTypes>(props: {
+  field: FieldKey;
+  children?: (
+    props: FormFieldTypes[GraphTypes[FieldKey]]['props'],
+  ) => React.ReactElement<any, any> | null;
 }) => React.ReactElement<any, any> | null;
 
 export type DeepStateShowComponent<
@@ -29,7 +32,7 @@ export type DeepStateShowComponent<
 export const buildComponents = <Config extends Form<Record<string, any>>>(
   formConfig: Config,
 ) => {
-  const DeepStateField: DeepStateFieldComponent = ({ field }) => {
+  const DeepStateField: DeepStateFieldComponent = ({ field, children }) => {
     const {
       data: props,
       config: { keyToTypeMap },
@@ -46,9 +49,13 @@ export const buildComponents = <Config extends Form<Record<string, any>>>(
 
     const Component = formConfig._fields[fieldType]._component;
 
-    // TODO: Fix the type for Fields/BaseConfigs
-    // StoreSnapshot is wrong
-    return <Component {...(props as any)} />;
+    return typeof children === 'function' ? (
+      children(props)
+    ) : (
+      // TODO: Fix the type for Fields/BaseConfigs
+      // StoreSnapshot is wrong
+      <Component {...(props as any)} />
+    );
   };
 
   const DeepStateShow: DeepStateShowComponent = ({ children, keys, when }) => {
