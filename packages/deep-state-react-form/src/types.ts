@@ -21,7 +21,9 @@ export type RemoveDefaultPropsFromRequired<ComponentProps, DefaultProps> = Omit<
   ComponentProps,
   keyof DefaultProps
 > & {
-  [Key in keyof DefaultProps]?: DefaultProps[Key];
+  [Key in keyof DefaultProps]?: Key extends keyof ComponentProps
+    ? ComponentProps[Key]
+    : never;
 };
 
 export type RequireProperty<T, U extends keyof T> = Omit<T, U> &

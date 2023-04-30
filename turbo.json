@@ -12,6 +12,7 @@
     "format": {},
     "format:check": {},
     "test": {},
+    "test:types": {},
     "typecheck": {}
   }
 }
