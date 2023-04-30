@@ -141,7 +141,7 @@ describe('Form', () => {
                 build({
                   keys: ['fieldA', '_meta'],
                   cond: (data) => {
-                    expectTypeOf(data).toMatchTypeOf<{
+                    expectTypeOf(data).toEqualTypeOf<{
                       fieldA: { propA: string };
                       _meta:
                         | { isValid: true }
@@ -160,7 +160,7 @@ describe('Form', () => {
                 build({
                   keys: ['fieldA', 'fieldB'],
                   cond: (data) => {
-                    expectTypeOf(data).toMatchTypeOf<{
+                    expectTypeOf(data).toEqualTypeOf<{
                       fieldA: { propA: string };
                       fieldB: { propB: number };
                     }>();
@@ -324,6 +324,29 @@ describe('Form Components', () => {
     );
   });
 
+  it('should restrict the props of the Field component to the type of the associated field', () => {
+    assertType(
+      Builder.form({
+        fields: {
+          input: Builder.field((_props: { customProp: boolean }) => null),
+        },
+      }).Form(
+        {
+          fields: { fieldA: { type: 'input' } },
+          children: ({ Field }) =>
+            Field({
+              field: 'fieldA',
+              children: (props) => {
+                expectTypeOf(props).toEqualTypeOf<{ customProp: boolean }>();
+                return null;
+              },
+            }),
+        },
+        null,
+      ),
+    );
+  });
+
   it('should restrict the Show component to keys in the `fields` object', () => {
     assertType(
       Form(
@@ -399,6 +422,12 @@ describe('Form Utilities', () => {
 
             // @ts-expect-error
             assertType(values.fieldC);
+
+            // @ts-expect-error
+            assertType(props.fieldC);
+
+            // @ts-expect-error
+            assertType(changedKeys[0] === 'fieldC');
           },
         },
         null,
@@ -473,6 +502,12 @@ describe('Form Utilities', () => {
               fieldA: { value: string };
               fieldB: { value: string };
             }>();
+
+            // @ts-expect-error
+            assertType(values.fieldC);
+
+            // @ts-expect-error
+            assertType(props.fieldC);
 
             return { isValid: true };
           },

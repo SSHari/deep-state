@@ -90,6 +90,41 @@ it('should handle the onSubmit event correctly', async () => {
   );
 });
 
+describe('Field', () => {
+  it('should show the field passed to the `field` prop', async () => {
+    render(
+      <Form
+        fields={{
+          name: { type: 'input', props: { label: 'Name' } },
+          submit: { type: 'button', props: { children: 'Submit' } },
+        }}
+      >
+        {({ Field }) => <Field field="name" />}
+      </Form>,
+    );
+
+    expect(await screen.findByLabelText(/name/i)).toBeInTheDocument();
+  });
+
+  it('should show the children instead of the default component', async () => {
+    render(
+      <Form
+        fields={{ name: { type: 'input', props: { value: 'Input Element' } } }}
+      >
+        {({ Field }) => (
+          <Field field="name">
+            {(props) => <>My Value is: {props.value}</>}
+          </Field>
+        )}
+      </Form>,
+    );
+
+    expect(
+      await screen.findByText(/my value is: input element/i),
+    ).toBeInTheDocument();
+  });
+});
+
 describe('Show', () => {
   it('should conditionally show elements', async () => {
     const { user } = render(

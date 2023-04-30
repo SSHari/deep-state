@@ -29,7 +29,18 @@ function TextField({
 }
 
 function NumberField(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} />;
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '4px',
+        marginBottom: '8px',
+      }}
+    >
+      <input {...props} />
+    </div>
+  );
 }
 
 function FormWrapper() {
@@ -167,6 +178,16 @@ function App() {
             }),
           ],
         },
+        fieldD: {
+          type: 'text',
+          dependencies: (build) => [
+            build({
+              keys: ['fieldB'],
+              cond: (data) => parseInt(data.fieldB.value as string) === 100,
+              effects: { value: 'disable D', disabled: true },
+            }),
+          ],
+        },
       }}
     >
       {({ Field, Show }) => (
@@ -183,6 +204,14 @@ function App() {
           >
             <Field field="fieldC" />
           </Show>
+          <Field field="fieldD">
+            {(props) => (
+              <div>
+                <input {...props} />
+                <span>{props.disabled ? 'Disabled!' : props.value}</span>
+              </div>
+            )}
+          </Field>
         </>
       )}
     </Form>
