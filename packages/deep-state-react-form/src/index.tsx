@@ -293,6 +293,7 @@ export const Builder = {
                 GraphTypes
               >,
               Show: components.Show,
+              Watch: components.Watch,
             })}
           </FormWrapper>
         </DeepStateContext.Provider>

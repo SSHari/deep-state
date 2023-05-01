@@ -186,11 +186,17 @@ function App() {
               cond: (data) => parseInt(data.fieldB.value as string) === 100,
               effects: { value: 'disable D', disabled: true },
             }),
+            build({
+              keys: ['_meta'],
+              cond: (data) =>
+                !data._meta.isValid && data._meta.errors.fieldA === '',
+              effects: {},
+            }),
           ],
         },
       }}
     >
-      {({ Field, Show }) => (
+      {({ Field, Show, Watch }) => (
         <>
           <Field field="randomizer" />
           <Field field="reset" />
@@ -212,6 +218,16 @@ function App() {
               </div>
             )}
           </Field>
+          <Watch keys={['fieldA', 'fieldB', '_meta']}>
+            {(props) => (
+              <>
+                <div>Watcher!</div>
+                <div>{props.fieldA.value}</div>
+                <div>{props.fieldB.value}</div>
+                <div>Is Valid: {props._meta.isValid.toString()}</div>
+              </>
+            )}
+          </Watch>
         </>
       )}
     </Form>
