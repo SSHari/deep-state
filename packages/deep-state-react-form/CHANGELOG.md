@@ -1,5 +1,15 @@
 # @deep-state/react-form
 
+## 0.0.6
+
+### Patch Changes
+
+- [#21](https://github.com/SSHari/deep-state/pull/21) [`a9f4c65`](https://github.com/SSHari/deep-state/commit/a9f4c65e5e613522ff1e38f8a16c2ceadca30869) Thanks [@SSHari](https://github.com/SSHari)! - Add Watch component to subscribe to fields
+
+- [#21](https://github.com/SSHari/deep-state/pull/21) [`a9f4c65`](https://github.com/SSHari/deep-state/commit/a9f4c65e5e613522ff1e38f8a16c2ceadca30869) Thanks [@SSHari](https://github.com/SSHari)! - Add custom render prop for Field component
+
+- [#18](https://github.com/SSHari/deep-state/pull/18) [`7e25509`](https://github.com/SSHari/deep-state/commit/7e25509dff47cfc1a01fe0a4284edef8f79cf542) Thanks [@SSHari](https://github.com/SSHari)! - default props should preserve their original types
+
 ## 0.0.5
 
 ### Patch Changes
