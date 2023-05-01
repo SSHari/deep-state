@@ -211,7 +211,69 @@ describe('Show', () => {
         </Form>,
       ),
     ).toThrowErrorMatchingInlineSnapshot(
-      '"To use the Show component. the Field key fake-field must be set in the <FormProvider> fields prop."',
+      '"To use the Show component, the field key `fake-field` must be set in the <FormProvider> fields prop."',
+    );
+  });
+});
+
+describe('Watch', () => {
+  it('should provide the child elements with access to the props for all keys', async () => {
+    render(
+      <Form
+        fields={{ name: { type: 'input', props: { value: 'I am an input!' } } }}
+      >
+        {({ Watch }) => (
+          <Watch keys={['name']}>{(props) => <>{props.name.value}</>}</Watch>
+        )}
+      </Form>,
+    );
+
+    expect(await screen.findByText(/i am an input!/i)).toBeInTheDocument();
+  });
+
+  it('should provide the child elements with access to the _meta key', async () => {
+    const { user } = render(
+      <Form
+        validateOnChange
+        validate={() => ({
+          isValid: false,
+          errors: { name: 'Name has an error!' },
+        })}
+        fields={{ name: { type: 'input', props: { label: 'Name' } } }}
+      >
+        {({ Field, Watch }) => (
+          <>
+            <Field field="name" />
+            <Watch keys={['_meta']}>
+              {(props) => (
+                <>{!props._meta.isValid && props._meta.errors.name}</>
+              )}
+            </Watch>
+          </>
+        )}
+      </Form>,
+    );
+
+    // Change input to trigger validation
+    await user.type(await screen.findByLabelText(/name/i), 'change');
+    expect(await screen.findByText(/name has an error!/i)).toBeInTheDocument();
+  });
+
+  it("should throw if a key that's not listed in the fields is used", () => {
+    Logger.suppressLogging();
+
+    expect(() =>
+      render(
+        <Form fields={{}}>
+          {({ Watch }) => (
+            // Disabled to test the error state
+            // @ts-expect-error
+            <Watch keys={['fake-field']}>{() => <></>}</Watch>
+          )}
+        </Form>,
+      ),
+    ).toThrowErrorMatchingInlineSnapshot(
+      '"To use the Watch component, the field key `fake-field` must be set in the <FormProvider> fields prop."',
     );
   });
 });

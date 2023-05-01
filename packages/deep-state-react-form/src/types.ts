@@ -11,6 +11,7 @@ import type { Form, InferForm } from './builder';
 import type {
   DeepStateFieldComponent,
   DeepStateShowComponent,
+  DeepStateWatchComponent,
 } from './components';
 
 export type BaseComponentReturn = React.ReactElement<any, any> | null;
@@ -42,16 +43,6 @@ export type DeepStateContextValue<Fields extends BaseFields> = {
   config: { keyToTypeMap: Record<string, string> };
 };
 
-type FormMetaData<Keys extends Array<any>> =
-  | { isValid: true }
-  | { isValid: false; errors: Record<Keys[number], string> };
-
-type FormDependencyMetaData<DependencyKeys extends Array<any>> = {
-  [DependencyKey in DependencyKeys[number] as DependencyKey extends '_meta'
-    ? DependencyKey
-    : never]: FormMetaData<DependencyKeys>;
-};
-
 type FormFieldPropCollection<
   FormFieldTypes extends Record<string, any>,
   GraphTypes extends Record<string, any>,
@@ -65,11 +56,30 @@ type FormFieldPropCollection<
 };
 
 export type DependencyData<
-  FormFieldTypes extends Record<string, any>,
-  GraphTypes extends Record<string, any>,
-  DependencyKeys extends Array<any>,
-> = FormDependencyMetaData<DependencyKeys> &
-  FormFieldPropCollection<FormFieldTypes, GraphTypes, DependencyKeys>;
+  FormFieldTypes extends InferForm<Form<any>> = InferForm<Form<any>>,
+  GraphTypes extends Record<keyof GraphTypes, keyof FormFieldTypes> = Record<
+    string,
+    keyof FormFieldTypes
+  >,
+  DependencyKeys extends Array<string | number | symbol> = Array<
+    string | number | symbol
+  >,
+> = FormFieldPropCollection<FormFieldTypes, GraphTypes, DependencyKeys> & {
+  [DependencyKey in DependencyKeys[number] as DependencyKey extends '_meta'
+    ? DependencyKey
+    : never]:
+    | { isValid: true }
+    | {
+        isValid: false;
+        errors: {
+          [GraphKey in keyof GraphTypes as FormFieldTypes[GraphTypes[GraphKey]] extends {
+            valueProp: any;
+          }
+            ? GraphKey
+            : never]?: string;
+        };
+      };
+};
 
 export type DeepStateFormProviderProps<
   FormFieldTypes extends InferForm<Form<any>> = InferForm<Form<any>>,
@@ -92,6 +102,7 @@ export type DeepStateFormProviderProps<
   children?: (config: {
     Field: DeepStateFieldComponent<FormFieldTypes, GraphTypes>;
     Show: DeepStateShowComponent<FormFieldTypes, GraphTypes>;
+    Watch: DeepStateWatchComponent<FormFieldTypes, GraphTypes>;
   }) => React.ReactNode;
   onChange?: (
     values: {

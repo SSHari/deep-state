@@ -129,7 +129,7 @@ describe('Form', () => {
     assertType(
       Builder.form({
         fields: {
-          A: Builder.field((_: { propA: string }) => null),
+          A: Builder.field((_: { propA: string }) => null).valueProp('propA'),
           B: Builder.field((_: { propB: number }) => null),
         },
       }).Form(
@@ -164,6 +164,41 @@ describe('Form', () => {
                       fieldA: { propA: string };
                       fieldB: { propB: number };
                     }>();
+
+                    return true;
+                  },
+                  effects: {},
+                }),
+              ],
+            },
+          },
+        },
+        null,
+      ),
+    );
+  });
+
+  it('should return the correct data for the _meta key listed in a dependency', () => {
+    assertType(
+      Builder.form({
+        fields: {
+          A: Builder.field((_: { propA: string }) => null).valueProp('propA'),
+          B: Builder.field((_: { propB: number }) => null),
+        },
+      }).Form(
+        {
+          fields: {
+            fieldA: {
+              type: 'A',
+              dependencies: (build) => [
+                build({
+                  keys: ['_meta'],
+                  cond: (data) => {
+                    if (!data._meta.isValid) {
+                      expectTypeOf(data._meta.errors).toEqualTypeOf<{
+                        fieldA?: string;
+                      }>();
+                    }
 
                     return true;
                   },
@@ -380,8 +415,138 @@ describe('Form Components', () => {
               Show({ keys: [], when: (data) => !data.fieldA, children: null }),
               Show({
                 keys: ['fieldA'],
-                when: (data) => !data.fieldA,
+                when: (data) => {
+                  expectTypeOf(data.fieldA).toEqualTypeOf<
+                    React.InputHTMLAttributes<HTMLInputElement> & {
+                      label?: string;
+                    }
+                  >();
+
+                  return true;
+                },
                 children: null,
+              }),
+            ];
+          },
+        },
+        null,
+      ),
+    );
+  });
+
+  it('should return all fields in the _meta errors object for the Show component `when` data', () => {
+    assertType(
+      Form(
+        {
+          fields: { fieldA: { type: 'input' } },
+          children: ({ Show }) => {
+            return [
+              Show({
+                keys: ['_meta'],
+                when: (data) => {
+                  if (data._meta.isValid) {
+                    expectTypeOf(data._meta).toEqualTypeOf<{ isValid: true }>();
+                  } else {
+                    expectTypeOf(data._meta).toEqualTypeOf<{
+                      isValid: false;
+                      errors: { fieldA?: string };
+                    }>();
+                  }
+
+                  return true;
+                },
+                children: null,
+              }),
+            ];
+          },
+        },
+        null,
+      ),
+    );
+  });
+
+  it('should restrict the Watch component to keys in the `fields` object', () => {
+    assertType(
+      Form(
+        {
+          fields: { fieldA: { type: 'input' } },
+          children: ({ Watch }) => {
+            return [
+              Watch({
+                // @ts-expect-error
+                keys: ['fake-field-type'],
+                children: () => null,
+              }),
+              Watch({ keys: ['fieldA'], children: () => null }),
+            ];
+          },
+        },
+        null,
+      ),
+    );
+  });
+
+  it('should restrict the Watch component `children` data to keys in the `keys` array', () => {
+    assertType(
+      Form(
+        {
+          fields: { fieldA: { type: 'input' } },
+          children: ({ Watch }) => {
+            return [
+              Watch({
+                keys: [],
+                children: (data) => {
+                  // @ts-expect-error
+                  assert(data.fieldA);
+                  return null;
+                },
+              }),
+              Watch({
+                keys: ['fieldA', '_meta'],
+                children: (data) => {
+                  expectTypeOf(data.fieldA).toEqualTypeOf<
+                    React.InputHTMLAttributes<HTMLInputElement> & {
+                      label?: string;
+                    }
+                  >();
+
+                  expectTypeOf(data._meta).toEqualTypeOf<
+                    | { isValid: true }
+                    | { isValid: false; errors: { fieldA?: string } }
+                  >();
+
+                  return null;
+                },
+              }),
+            ];
+          },
+        },
+        null,
+      ),
+    );
+  });
+
+  it('should return all fields in the _meta errors object for the Watch component `children` data', () => {
+    assertType(
+      Form(
+        {
+          fields: { fieldA: { type: 'input' } },
+          children: ({ Watch }) => {
+            return [
+              Watch({
+                keys: ['_meta'],
+                children: (data) => {
+                  if (data._meta.isValid) {
+                    expectTypeOf(data._meta).toEqualTypeOf<{ isValid: true }>();
+                  } else {
+                    expectTypeOf(data._meta).toEqualTypeOf<{
+                      isValid: false;
+                      errors: { fieldA?: string };
+                    }>();
+                  }
+
+                  return null;
+                },
               }),
             ];
           },
