@@ -8,7 +8,7 @@ export type DeepStateFieldComponent<
     string,
     keyof FormFieldTypes
   >,
-> = <FieldKey extends keyof GraphTypes = keyof GraphTypes>(props: {
+> = <FieldKey extends keyof GraphTypes>(props: {
   field: FieldKey;
   children?: (
     props: FormFieldTypes[GraphTypes[FieldKey]]['props'],
@@ -88,23 +88,15 @@ export const buildComponents = <Config extends Form<Record<string, any>>>(
 
   const DeepStateField: DeepStateFieldComponent = ({ field, children }) => {
     const { dataMap, config } = useWatchFields([field]);
+    validateKeys('Field', [field], config.keyToTypeMap);
 
     const fieldType = config.keyToTypeMap[field];
-    if (!fieldType) {
-      throw new Error(
-        `Field key ${field} must be set in the <FormProvider> fields prop.`,
-      );
-    }
+    const fieldData = dataMap[field as keyof typeof dataMap];
+
+    if (typeof children === 'function') return children(fieldData);
 
     const Component = formConfig._fields[fieldType]._component;
-
-    return typeof children === 'function' ? (
-      children(dataMap[field as keyof typeof dataMap])
-    ) : (
-      // TODO: Fix the type for Fields/BaseConfigs
-      // StoreSnapshot is wrong
-      <Component {...dataMap[field as keyof typeof dataMap]} />
-    );
+    return <Component {...fieldData} />;
   };
 
   const DeepStateShow: DeepStateShowComponent = ({ children, keys, when }) => {
