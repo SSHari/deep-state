@@ -123,6 +123,24 @@ describe('Field', () => {
       await screen.findByText(/my value is: input element/i),
     ).toBeInTheDocument();
   });
+
+  it("should throw if a key that's not listed in the fields is used", () => {
+    Logger.suppressLogging();
+
+    expect(() =>
+      render(
+        <Form fields={{}}>
+          {({ Field }) => (
+            // Disabled to test the error state
+            // @ts-expect-error
+            <Field field="fake-field" />
+          )}
+        </Form>,
+      ),
+    ).toThrowErrorMatchingInlineSnapshot(
+      '"To use the Field component, the field key `fake-field` must be set in the <FormProvider> fields prop."',
+    );
+  });
 });
 
 describe('Show', () => {
